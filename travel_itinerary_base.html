@@ -1,0 +1,3034 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f1e7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>✈️ 2026美國白卡之旅</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    /* Warm off‑white theme */
+    --bg: #f6f1e7;
+    --surface: #fffaf1;
+    --surface2: #f3ebde;
+    --surface3: #efe3d1;
+    --accent: #c28b3c;     /* warm caramel */
+    --accent2: #2f7d6b;    /* calm teal */
+    --accent3: #3b5e91;    /* muted blue */
+    --danger: #b9382f;     /* brick */
+    --text: #1a1a1a;
+    --text2: #4b5563;
+    --text3: #6b7280;
+    --border: rgba(26,26,26,0.10);
+    --shadow: 0 12px 30px rgba(26,26,26,0.08);
+    --radius: 16px;
+    --radius-sm: 10px;
+    /* More transparent overlay so background photos read better */
+    --header-overlay: linear-gradient(135deg, rgba(255,250,241,0.72) 0%, rgba(246,241,231,0.72) 100%);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: 'Noto Sans HK', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+  }
+
+  /* NAV */
+  .bottom-nav {
+    position: fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:430px;
+    background: rgba(255,250,241,0.9);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display:flex; z-index:1000;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+  .nav-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding: 6px 4px; cursor:pointer; border:none; background:none; color:var(--text3);
+    font-size:10px; font-family:inherit; transition:all 0.2s;
+  }
+  .nav-btn.active { color:var(--accent); }
+  .nav-btn svg { width:22px; height:22px; }
+
+  /* PAGES */
+  .page { display:none; padding:16px; }
+  .page.active { display:block; }
+
+  /* HEADER */
+  .page-header {
+    background: var(--header-overlay);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .page-header.has-bg {
+    background:
+      var(--header-overlay),
+      var(--header-bg, none);
+    background-size: cover;
+    background-position: center;
+  }
+  .page-header::before {
+    content:''; position:absolute; top:-30px; right:-30px;
+    width:120px; height:120px; border-radius:50%;
+    background: radial-gradient(circle, rgba(194,139,60,0.18), transparent);
+    pointer-events:none;
+  }
+  .page-header > * { position:relative; z-index:1; }
+  .page-header h1 { font-size:28px; line-height:1.15; font-weight:900; color:var(--text); letter-spacing:-0.2px; }
+  .page-header p { font-size:14px; color:var(--text2); margin-top:6px; line-height:1.45; }
+  .trip-title-hit{
+    cursor: default;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  /* SECTION TITLE */
+  .section-title { font-size:12px; font-weight:700; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin: 20px 0 10px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); margin-bottom:12px; overflow:hidden;
+  }
+  .card-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 16px; cursor:pointer;
+  }
+  .card-body { padding: 0 16px 16px; }
+
+  /* DAY BUTTONS */
+  .day-grid {
+    display:flex; gap:10px; overflow-x:auto; padding: 2px 16px 8px;
+    margin: 0 -16px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  }
+  .day-grid::-webkit-scrollbar { display:none; }
+  .day-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 8px;
+    cursor:pointer; text-align:center; transition:all 0.2s;
+    position:relative; overflow:hidden; flex: 0 0 calc((100% - 20px) / 3);
+    min-width: 112px; scroll-snap-align:start;
+  }
+  .day-btn:active { transform:scale(0.96); }
+  .day-btn.active-day { border-color:var(--accent); background: rgba(194,139,60,0.10); }
+  .day-btn .day-num { font-size:18px; font-weight:900; color:var(--accent); line-height:1; }
+  .day-btn .day-label { font-size:9px; color:var(--text2); margin-top:3px; letter-spacing:0.2px; }
+  .day-btn .day-date { font-size:9px; color:var(--text3); margin-top:2px; }
+  .day-btn .spot-count {
+    position:absolute; top:6px; right:6px;
+    background:var(--accent3); color:#fff; font-size:9px; font-weight:700;
+    border-radius:20px; padding:1px 5px; min-width:16px; text-align:center;
+  }
+
+  /* SPOT ITEM */
+  .spot-item {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 14px; margin-bottom: 10px; border: 1px solid var(--border);
+    position:relative;
+  }
+  .spot-item.done {
+    border-color: rgba(47,125,107,0.55);
+    background: linear-gradient(135deg, rgba(47,125,107,0.14), var(--surface2) 42%);
+  }
+  .spot-item.done::after {
+    content:'已標記'; position:absolute; top:10px; right:38px;
+    font-size:10px; font-weight:900; color:#03130d;
+    background:var(--accent2); border-radius:20px; padding:3px 8px;
+  }
+  html[lang="en"] .spot-item.done::after { content:'Marked'; }
+  .spot-item.done .spot-name { color:var(--accent2); }
+  .spot-header { display:flex; align-items:flex-start; gap:10px; }
+  .spot-emoji { font-size:28px; flex-shrink:0; }
+  .spot-info { flex:1; min-width:0; }
+  .spot-name { font-size:15px; font-weight:700; color:var(--text); }
+  .spot-time { font-size:12px; color:var(--accent); margin-top:2px; }
+  .spot-desc { font-size:12px; color:var(--text2); margin-top:6px; line-height:1.5; }
+  .spot-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .spot-tag {
+    font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .tag-map { background:rgba(16,185,129,0.15); color:var(--accent2); }
+  .tag-note { background:rgba(59,94,145,0.14); color:var(--accent3); }
+  .tag-done { background:rgba(245,158,11,0.15); color:var(--accent); }
+  .tag-done.checked { background:var(--accent); color:#000; }
+
+  .range-row { display:flex; align-items:center; gap:12px; }
+  .range-value {
+    min-width:58px; text-align:center; border-radius:20px;
+    background:rgba(245,158,11,0.15); color:var(--accent);
+    font-size:13px; font-weight:900; padding:7px 10px;
+  }
+  input[type="range"] {
+    width:100%; accent-color:var(--accent); cursor:pointer;
+  }
+  .time-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .time-hint { font-size:11px; color:var(--text3); margin-top:6px; line-height:1.5; }
+  .lang-switch {
+    display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:5px;
+  }
+  .lang-switch button {
+    border:none; border-radius:8px; background:transparent; color:var(--text2);
+    padding:10px; font-family:inherit; font-weight:800; cursor:pointer;
+  }
+  .lang-switch button.active { background:var(--accent); color:#000; }
+
+  /* FLOAT ADD BTN */
+  .fab {
+    position:fixed; bottom:90px; right:calc(50% - 210px + 16px);
+    width:52px; height:52px; border-radius:50%;
+    background: linear-gradient(135deg, var(--accent), #d97706);
+    border:none; cursor:pointer; font-size:24px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+    z-index:500; transition:transform 0.2s;
+  }
+  .fab:active { transform:scale(0.9); }
+
+  /* MODAL */
+  .modal-bg {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+    backdrop-filter:blur(4px); z-index:2000; align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.open { display:flex; }
+  .modal {
+    background: var(--surface); border-radius: 24px 24px 0 0;
+    padding: 24px 20px max(24px, env(safe-area-inset-bottom));
+    width:100%; max-width:430px; max-height:90vh; overflow-y:auto;
+  }
+  .modal-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+  .modal h3 { font-size:18px; font-weight:700; margin-bottom:16px; }
+
+  /* INPUTS */
+  .input-group { margin-bottom:14px; }
+  .input-group label { font-size:12px; color:var(--text2); display:block; margin-bottom:6px; }
+  .input-group input, .input-group select, .input-group textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius: var(--radius-sm); padding:12px; color:var(--text);
+    font-family:inherit; font-size:14px; outline:none;
+  }
+  .input-group textarea { resize:none; height:80px; }
+  .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .input-group select option { background: var(--surface); }
+
+  .btn-primary {
+    width:100%; padding:14px; background: linear-gradient(135deg,var(--accent),#d97706);
+    border:none; border-radius: var(--radius-sm); color:#000; font-weight:700;
+    font-size:15px; cursor:pointer; font-family:inherit;
+  }
+  .btn-secondary {
+    width:100%; padding:12px; background: var(--surface2);
+    border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
+    font-weight:500; font-size:14px; cursor:pointer; font-family:inherit; margin-bottom:8px;
+  }
+  .btn-danger {
+    padding:8px 14px; background:rgba(239,68,68,0.15); color:var(--danger);
+    border:none; border-radius: var(--radius-sm); cursor:pointer; font-family:inherit;
+    font-size:13px;
+  }
+
+  /* MARK / EXPENSE */
+  .expense-item {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 14px; margin-bottom:10px; border: 1px solid var(--border);
+  }
+  .expense-row { display:flex; justify-content:space-between; align-items:center; }
+  .expense-name { font-size:14px; font-weight:600; }
+  .expense-amt { font-size:14px; font-weight:700; color:var(--accent2); }
+  .expense-meta { font-size:11px; color:var(--text3); margin-top:4px; }
+  .person-chip {
+    display:inline-flex; align-items:center; gap:4px;
+    background: var(--surface3); border-radius:20px; padding:3px 10px 3px 6px;
+    font-size:12px; margin:3px 3px 3px 0; cursor:pointer;
+    border: 1px solid var(--border); color:var(--text2);
+  }
+  .person-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(245,158,11,0.1); }
+
+  /* SETTLE */
+  .settle-card {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 16px; margin-bottom:10px; border: 1px solid var(--border);
+  }
+  .settle-arrow { font-size:20px; margin: 0 8px; }
+  .settle-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .settle-amt { font-size:18px; font-weight:900; color:var(--accent); }
+
+  /* CURRENCY */
+  .currency-display {
+    background: var(--surface2); border-radius: var(--radius);
+    padding: 20px; text-align:center; margin-bottom:16px;
+  }
+  .currency-result { font-size:32px; font-weight:900; color:var(--accent); }
+  .currency-label { font-size:13px; color:var(--text2); margin-top:4px; }
+  .rate-info { font-size:11px; color:var(--text3); margin-top:6px; }
+
+  /* TRANSLATE */
+  .translate-box {
+    background: var(--surface2); border-radius: var(--radius);
+    padding: 16px; margin-bottom:12px;
+  }
+  .translate-output {
+    font-size:20px; font-weight:700; color:var(--accent2);
+    margin-top:10px; line-height:1.5; min-height:40px;
+  }
+  .phonetic { font-size:14px; color:var(--text2); margin-top:6px; font-style:italic; }
+  .speak-btn {
+    display:flex; align-items:center; gap:6px; padding:10px 16px;
+    background:rgba(16,185,129,0.15); color:var(--accent2); border:none;
+    border-radius: var(--radius-sm); cursor:pointer; font-family:inherit; font-size:14px;
+    margin-top:10px; font-weight:600;
+  }
+  .speak-btn:active { background:rgba(16,185,129,0.3); }
+
+  /* SETTINGS */
+  .settings-item {
+    background: var(--surface); border-radius: var(--radius-sm);
+    padding: 14px 16px; margin-bottom:8px; border: 1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .settings-label { font-size:14px; }
+  .settings-val { font-size:13px; color:var(--accent); }
+
+  /* NOTES */
+  .note-item {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding:14px; margin-bottom:8px; border-left: 3px solid var(--accent3);
+    cursor:pointer;
+  }
+  .note-item .note-title { font-size:14px; font-weight:600; }
+  .note-item .note-body { font-size:12px; color:var(--text2); margin-top:4px; }
+  .note-item .note-meta { font-size:11px; color:var(--text3); margin-top:6px; }
+
+  /* TABS */
+  .tab-row { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:2px; }
+  .tab-row::-webkit-scrollbar { display:none; }
+  .tab {
+    padding:8px 16px; border-radius:20px; font-size:13px; font-weight:600;
+    cursor:pointer; border:1px solid var(--border); white-space:nowrap;
+    background:var(--surface); color:var(--text2);
+  }
+  .tab.active { background:var(--accent); color:#000; border-color:var(--accent); }
+
+  /* Day view: Map + timeline */
+  .day-map {
+    width:100%;
+    height: 280px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    overflow:hidden;
+    box-shadow: var(--shadow);
+  }
+  .day-map .leaflet-control-container .leaflet-control-attribution{
+    background: rgba(255,250,241,0.8);
+    color: var(--text3);
+  }
+  .day-map .leaflet-bar a{
+    background: rgba(255,250,241,0.9);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .timeline-wrap{
+    margin-top: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .timeline{
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
+  .timeline-item{
+    display:flex;
+    align-items:stretch;
+    gap: 12px;
+  }
+  .timeline-axis{
+    width: 22px;
+    flex: 0 0 22px;
+    position: relative;
+    display:flex;
+    justify-content:center;
+  }
+  .timeline-axis::before{
+    content:'';
+    position:absolute;
+    top: 10px;
+    bottom: -10px; /* extend through gap to next item */
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 2px dashed rgba(26,26,26,0.22);
+  }
+  .timeline-item:last-child .timeline-axis::before{
+    bottom: 10px;
+  }
+  .timeline-dot{
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid rgba(255,250,241,0.98);
+    box-shadow: 0 6px 14px rgba(26,26,26,0.10);
+    margin-top: 18px; /* aligns with card title row */
+    z-index: 1;
+  }
+  .timeline-body{
+    flex:1;
+    min-width:0;
+  }
+  .timeline-travel{
+    padding: 0 0 0 34px; /* align under cards, not under axis */
+    margin-top: -2px;
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.35;
+  }
+  .timeline-travel .travel-note{
+    color: var(--text3);
+    opacity: 0.95;
+  }
+  .timeline .spot-item{
+    margin-bottom: 0; /* spacing comes from timeline gaps */
+  }
+  .timeline-empty{
+    padding: 18px 8px;
+    text-align:center;
+    color: var(--text3);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  /* Smaller "day title" line inside day detail */
+  .day-heading{
+    font-size:10px;
+    font-weight:800;
+    color: var(--text3);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    margin:0;
+  }
+  .map-add-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:12px; margin-bottom:12px;
+  }
+  .map-search-row { display:flex; gap:8px; align-items:center; }
+  .map-search-row input {
+    flex:1; min-width:0; background:var(--surface2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:11px 12px; color:var(--text);
+    font-family:inherit; font-size:13px; outline:none;
+  }
+  .map-search-row input:focus { border-color:var(--accent); }
+  .map-mini-btn {
+    border:none; border-radius:var(--radius-sm); background:rgba(245,158,11,0.16);
+    color:var(--accent); padding:11px 12px; font-family:inherit; font-weight:800;
+    cursor:pointer; white-space:nowrap;
+  }
+  .map-helper { font-size:11px; color:var(--text3); margin-top:8px; line-height:1.5; }
+  .map-reco-row { display:flex; gap:8px; overflow-x:auto; margin-top:8px; padding-bottom:2px; }
+  .map-reco-row::-webkit-scrollbar { display:none; }
+  .map-empty {
+    background:var(--surface2); border:1px dashed var(--border);
+    border-radius:var(--radius-sm); padding:26px 16px; text-align:center;
+    color:var(--text2); font-size:13px; line-height:1.6;
+  }
+  .map-place-list { display:flex; gap:8px; overflow-x:auto; margin-top:10px; padding-bottom:2px; }
+  .map-place-list::-webkit-scrollbar { display:none; }
+  .map-place-chip {
+    border:none; border-radius:20px; background:rgba(16,185,129,0.15);
+    color:var(--accent2); padding:8px 12px; font-family:inherit;
+    font-size:12px; white-space:nowrap; cursor:pointer;
+  }
+  .camera-card {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px; margin-bottom:12px;
+  }
+  .camera-drop {
+    border:1px dashed rgba(245,158,11,0.45); border-radius:var(--radius);
+    background:rgba(245,158,11,0.08); padding:18px; text-align:center;
+  }
+  .camera-preview {
+    width:100%; max-height:260px; object-fit:cover; border-radius:var(--radius-sm);
+    margin-top:12px; display:none; border:1px solid var(--border);
+  }
+
+  /* BADGE */
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700;
+  }
+  .badge-green { background:rgba(16,185,129,0.2); color:var(--accent2); }
+  .badge-yellow { background:rgba(245,158,11,0.2); color:var(--accent); }
+  .badge-red { background:rgba(239,68,68,0.2); color:var(--danger); }
+
+  /* SUMMARY */
+  .summary-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .summary-row:last-child { border-bottom:none; }
+
+  /* STAR MARK */
+  .star-mark { position:absolute; top:10px; right:10px; font-size:18px; cursor:pointer; }
+
+  /* Loading */
+  .loading-dot { display:inline-block; animation:blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  /* Chip grid */
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+
+  /* Scroll target */
+  .day-detail { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Edit mode */
+  .edit-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1500; }
+
+  hr.divider { border:none; border-top:1px solid var(--border); margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE: 行程 ==================== -->
+<div class="page active" id="page-itinerary">
+  <div class="page-header" id="header-itinerary">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1 class="trip-title-hit" id="trip-title">✈️ 我的旅程</h1>
+        <p id="trip-subtitle">點擊日期查看詳細行程</p>
+        <div id="owner-hint" style="display:none;font-size:11px;color:var(--text3);margin-top:8px;line-height:1.45;opacity:0.85" data-i18n="ownerHint">（Owner：長按標題解鎖設定）</div>
+      </div>
+      <button id="settings-btn" type="button" aria-label="開啟行程設定" style="display:none;background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;">⚙️</button>
+    </div>
+  </div>
+
+  <div id="day-grid" class="day-grid"></div>
+
+  <div id="day-detail-area"></div>
+</div>
+
+<!-- ==================== PAGE: 帳單 ==================== -->
+<div class="page" id="page-expense">
+  <div class="page-header" id="header-expense">
+    <h1 data-i18n="expenseTitle">💰 分帳計算</h1>
+    <p data-i18n="expenseSubtitle">記錄每人支出，自動計算誰欠誰錢</p>
+  </div>
+
+  <div class="tab-row">
+    <div class="tab active" onclick="switchExpTab('record',this)" data-i18n="expTabRecord">記錄</div>
+    <div class="tab" onclick="switchExpTab('settle',this)" data-i18n="expTabSettle">結算</div>
+    <div class="tab" onclick="switchExpTab('summary',this)" data-i18n="expTabSummary">總覽</div>
+  </div>
+
+  <div id="exp-record">
+    <div class="card">
+      <div class="card-header" style="cursor:default">
+        <span style="font-size:14px;font-weight:700;" data-i18n="tripMembers">👥 旅行成員</span>
+        <button class="spot-tag tag-note" onclick="openModal('modal-add-person')" data-i18n="addPersonBtn">+ 加人</button>
+      </div>
+      <div class="card-body">
+        <div id="person-list" class="chips"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span class="section-title" style="margin:0" data-i18n="expenseRecords">支出記錄</span>
+      <button class="spot-tag tag-map" onclick="openModal('modal-add-expense')" data-i18n="addExpenseBtn">+ 記帳</button>
+    </div>
+    <div id="expense-list"></div>
+  </div>
+
+  <div id="exp-settle" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header" style="cursor:default">
+        <span style="font-size:14px;font-weight:700" data-i18n="settlePlan">💡 結算方案</span>
+      </div>
+      <div class="card-body">
+        <div id="settle-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="exp-summary" style="display:none">
+    <div class="card">
+      <div class="card-header" style="cursor:default">
+        <span style="font-size:14px;font-weight:700" data-i18n="expenseOverview">📊 消費總覽</span>
+      </div>
+      <div class="card-body">
+        <div id="summary-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: 翻譯 ==================== -->
+<div class="page" id="page-translate">
+  <div class="page-header" id="header-translate">
+    <h1 data-i18n="translateTitle">📷 旅行即影翻譯</h1>
+    <p data-i18n="translateSubtitle">影低菜單、招牌或睇唔明嘅字，即刻解讀同學讀音</p>
+  </div>
+
+  <div class="tab-row">
+    <div class="tab active" onclick="switchTransTab('camera',this)" data-i18n="transTabCamera">相機翻譯</div>
+    <div class="tab" onclick="switchTransTab('text',this)" data-i18n="transTabText">文字翻譯</div>
+    <div class="tab" onclick="switchTransTab('phrase',this)" data-i18n="transTabPhrase">常用句</div>
+  </div>
+
+  <div id="trans-camera">
+    <div class="camera-card">
+      <div class="camera-drop">
+        <div style="font-size:32px;margin-bottom:8px">📸</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px" data-i18n="cameraHero">影 menu / 招牌 / 包裝文字</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px" data-i18n="cameraHelp">手機會開相機；電腦就可以揀相。之後可以貼 OCR 出嚟嘅文字，app 會解釋意思、點叫、點讀。</div>
+        <input id="camera-input" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewMenuPhoto(event)">
+        <button class="btn-primary" onclick="document.getElementById('camera-input').click()" data-i18n="openCameraBtn">📷 開相機 / 揀相</button>
+      </div>
+      <img id="camera-preview" class="camera-preview" alt="已選擇的菜單相片">
+    </div>
+    <div class="input-group">
+      <label data-i18n="cameraTextLabel">相片入面嘅文字（可用手機相簿/系統 OCR 複製後貼上）</label>
+      <textarea id="camera-menu-input" placeholder="例如：&#10;から揚げ 600円&#10;担々麺 辛口&#10;ピーナッツソース"></textarea>
+    </div>
+    <div class="input-group">
+      <label data-i18n="targetViewLabel">我想睇</label>
+      <select id="camera-target-lang">
+        <option value="Traditional Chinese with Cantonese descriptions">廣東話解說 + 點讀</option>
+        <option value="Traditional Chinese">繁體中文 + 點讀</option>
+        <option value="English">English explanation + pronunciation</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="doCameraMenuTranslate()" data-i18n="cameraTranslateBtn">🔎 解讀同教我點讀</button>
+    <div class="translate-box" id="camera-result" style="display:none;margin-top:16px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px" data-i18n="analysisResult">解讀結果</div>
+      <div id="camera-output" style="font-size:13px;line-height:1.8;color:var(--text)"></div>
+    </div>
+  </div>
+
+  <div id="trans-text" style="display:none">
+    <div class="input-group">
+      <label data-i18n="translateTo">翻譯成</label>
+      <select id="trans-target-lang" onchange="saveTransLang()">
+        <option value="Japanese">日文</option>
+        <option value="Korean">韓文</option>
+        <option value="Thai">泰文</option>
+        <option value="Vietnamese">越南文</option>
+        <option value="Traditional Chinese">繁體中文</option>
+        <option value="Simplified Chinese">簡體中文</option>
+        <option value="English">英文</option>
+        <option value="French">法文</option>
+        <option value="Spanish">西班牙文</option>
+        <option value="Italian">意大利文</option>
+        <option value="German">德文</option>
+        <option value="Portuguese">葡萄牙文</option>
+        <option value="Arabic">阿拉伯文</option>
+        <option value="Hindi">印地文</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label data-i18n="inputTextLabel">輸入文字（廣東話/英文/任何語言）</label>
+      <textarea id="trans-input" placeholder="例如：我唔食辣，有冇其他選擇？&#10;我对花生过敏&#10;Where is the toilet?"></textarea>
+    </div>
+    <button class="btn-primary" onclick="doTranslate()" data-i18n="translateBtn">🔄 翻譯</button>
+
+    <div class="translate-box" id="trans-result-box" style="display:none;margin-top:16px">
+      <div style="font-size:12px;color:var(--text3)" data-i18n="translationResult">翻譯結果</div>
+      <div class="translate-output" id="trans-output"></div>
+      <div class="phonetic" id="trans-phonetic"></div>
+      <button class="speak-btn" onclick="speakText()" id="speak-btn">
+        <span data-i18n="listenPronunciation">🔊 聆聽讀音</span>
+      </button>
+      <hr class="divider">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px" data-i18n="sourceMeaning">原文意思（廣東話）</div>
+      <div style="font-size:13px;color:var(--text2)" id="trans-meaning"></div>
+    </div>
+  </div>
+
+  <div id="trans-menu" style="display:none">
+    <div class="input-group">
+      <label data-i18n="menuInputLabel">輸入菜單名稱（日文/韓文/泰文...）</label>
+      <textarea id="menu-input" placeholder="例如：&#10;寿司 800円&#10;から揚げ 600円&#10;&#10;可以直接貼整個菜單！"></textarea>
+    </div>
+    <div class="input-group">
+      <label data-i18n="targetLanguage">目標語言</label>
+      <select id="menu-target-lang">
+        <option value="Traditional Chinese with Cantonese descriptions">廣東話解說</option>
+        <option value="Traditional Chinese">繁體中文</option>
+        <option value="English">English</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="doMenuTranslate()" data-i18n="menuTranslateBtn">🍽️ 解讀菜單</button>
+    <div class="translate-box" id="menu-result" style="display:none;margin-top:16px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px" data-i18n="menuExplanation">菜單解說</div>
+      <div id="menu-output" style="font-size:13px;line-height:1.8;color:var(--text)"></div>
+    </div>
+  </div>
+
+  <div id="trans-phrase" style="display:none">
+    <div class="input-group">
+      <label data-i18n="chooseLanguage">選擇語言</label>
+      <select id="phrase-lang" onchange="loadPhrases()">
+        <option value="Japanese">日文</option>
+        <option value="Korean">韓文</option>
+        <option value="Thai">泰文</option>
+        <option value="Vietnamese">越南文</option>
+        <option value="English">英文</option>
+      </select>
+    </div>
+    <div id="phrase-list"></div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: 匯率 ==================== -->
+<div class="page" id="page-currency">
+  <div class="page-header" id="header-currency">
+    <h1 data-i18n="currencyTitle">💱 匯率計算</h1>
+    <p data-i18n="currencySubtitle">快速換算旅行貨幣</p>
+  </div>
+
+  <div class="currency-display">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px" data-i18n="amountLabel">輸入金額</div>
+    <input type="number" id="curr-amount" value="1000" 
+      style="background:none;border:none;font-size:36px;font-weight:900;color:var(--text);text-align:center;width:100%;outline:none"
+      oninput="calcCurrency()">
+    <div style="margin-top:10px">
+      <select id="curr-from" onchange="calcCurrency()"
+        style="background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:15px;font-family:inherit">
+        <option value="HKD">🇭🇰 HKD 港幣</option>
+        <option value="CNY">🇨🇳 CNY 人民幣</option>
+        <option value="USD">🇺🇸 USD 美元</option>
+        <option value="TWD">🇹🇼 TWD 台幣</option>
+        <option value="JPY">🇯🇵 JPY 日圓</option>
+        <option value="KRW">🇰🇷 KRW 韓元</option>
+        <option value="THB">🇹🇭 THB 泰銖</option>
+        <option value="EUR">🇪🇺 EUR 歐元</option>
+        <option value="GBP">🇬🇧 GBP 英鎊</option>
+        <option value="SGD">🇸🇬 SGD 新加坡元</option>
+        <option value="MYR">🇲🇾 MYR 馬幣</option>
+        <option value="AUD">🇦🇺 AUD 澳元</option>
+        <option value="CAD">🇨🇦 CAD 加元</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="currency-results"></div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header" style="cursor:default">
+      <span style="font-size:14px;font-weight:700" data-i18n="customRateTitle">✏️ 自訂匯率</span>
+    </div>
+    <div class="card-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px" data-i18n="customRateHelp">可以係兌換處攞到匯率後自行輸入</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="custom-curr" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:inherit">
+          <option value="JPY">JPY 日圓</option>
+          <option value="KRW">KRW 韓元</option>
+          <option value="THB">THB 泰銖</option>
+          <option value="CNY">CNY 人民幣</option>
+          <option value="USD">USD 美元</option>
+          <option value="EUR">EUR 歐元</option>
+          <option value="TWD">TWD 台幣</option>
+        </select>
+        <div style="font-size:13px;color:var(--text2);white-space:nowrap" data-i18n="perHkd">= 1 HKD</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <input type="number" id="custom-rate" placeholder="例如：17.5" step="0.01"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:inherit;font-size:14px">
+        <button class="spot-tag tag-map" onclick="setCustomRate()" style="white-space:nowrap;padding:10px 14px" data-i18n="setBtn">設定</button>
+      </div>
+      <div id="custom-rate-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: 備忘 ==================== -->
+<div class="page" id="page-notes">
+  <div class="page-header" id="header-notes">
+    <h1 data-i18n="notesTitle">📝 備忘 & 標記</h1>
+    <p data-i18n="notesSubtitle">重要事項、打卡清單</p>
+  </div>
+
+  <div class="tab-row">
+    <div class="tab active" onclick="switchNoteTab('notes',this)" data-i18n="noteTabNotes">備忘錄</div>
+    <div class="tab" onclick="switchNoteTab('checklist',this)" data-i18n="noteTabChecklist">打卡清單</div>
+    <div class="tab" onclick="switchNoteTab('bookmark',this)" data-i18n="noteTabBookmarks">書籤景點</div>
+  </div>
+
+  <div id="note-notes">
+    <button class="btn-secondary" onclick="openModal('modal-add-note')" data-i18n="addNoteBtn">✏️ 新增備忘</button>
+    <div id="notes-list"></div>
+  </div>
+
+  <div id="note-checklist" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="check-input" placeholder="新增待辦..." data-i18n-placeholder="checkPlaceholder"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:inherit;font-size:13px">
+      <button class="spot-tag tag-map" onclick="addCheckItem()" style="padding:10px 14px;white-space:nowrap" data-i18n="addBtn">+ 加</button>
+    </div>
+    <div id="check-list"></div>
+  </div>
+
+  <div id="note-bookmark" style="display:none">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px" data-i18n="bookmarkHelp">⭐ 喺行程頁面撳星星就會出現喺呢度</div>
+    <div id="bookmark-list"></div>
+  </div>
+</div>
+
+<!-- ==================== BOTTOM NAV ==================== -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('itinerary',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span data-i18n="navItinerary">行程</span>
+  </button>
+  <button class="nav-btn" onclick="showPage('expense',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <span data-i18n="navExpense">分帳</span>
+  </button>
+  <button class="nav-btn" onclick="showPage('translate',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+    <span data-i18n="navTranslate">翻譯</span>
+  </button>
+  <button class="nav-btn" onclick="showPage('currency',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <span data-i18n="navCurrency">匯率</span>
+  </button>
+  <button class="nav-btn" onclick="showPage('notes',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span data-i18n="navNotes">備忘</span>
+  </button>
+</nav>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Settings Modal -->
+<div class="modal-bg" id="modal-settings">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="settingsTitle">⚙️ 行程設定</h3>
+    <div class="input-group">
+      <label data-i18n="language">語言</label>
+      <div class="lang-switch">
+        <button type="button" id="lang-zh" onclick="setLanguage('zh')">中文</button>
+        <button type="button" id="lang-en" onclick="setLanguage('en')">English</button>
+      </div>
+    </div>
+    <div class="input-group">
+      <label data-i18n="tripNameLabel">旅行名稱</label>
+      <input type="text" id="set-trip-name" placeholder="例如：日本東京之旅">
+    </div>
+    <div class="input-group">
+      <label>大標題背景圖片（URL，可留空）</label>
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        <input type="url" id="set-bg-itinerary" placeholder="行程頁 header 圖片 URL（例如：https://...jpg）">
+        <input type="url" id="set-bg-expense" placeholder="分帳頁 header 圖片 URL（例如：https://...jpg）">
+        <input type="url" id="set-bg-translate" placeholder="翻譯頁 header 圖片 URL（例如：https://...jpg）">
+        <input type="url" id="set-bg-currency" placeholder="匯率頁 header 圖片 URL（例如：https://...jpg）">
+        <input type="url" id="set-bg-notes" placeholder="備忘頁 header 圖片 URL（例如：https://...jpg）">
+      </div>
+      <div class="time-hint">提示：揀返米白暖色調、沙漠/公路/峽谷/城市夜景呢類會好配「USA West」主題。</div>
+    </div>
+    <div class="input-group">
+      <label data-i18n="startDateLabel">出發日期</label>
+      <input type="date" id="set-start-date">
+    </div>
+    <div class="input-group">
+      <label data-i18n="daysLabel">旅行天數</label>
+      <div class="range-row">
+        <input type="range" id="set-days" min="1" max="30" value="7" oninput="updateDaysLabel(this.value)">
+        <span class="range-value" id="set-days-label">7 日</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveSettings()" data-i18n="saveSettings">💾 儲存設定</button>
+    <div style="height:10px"></div>
+    <button class="btn-secondary" onclick="lockSettingsNow()" data-i18n="ownerLockNow">🔒 立即鎖定（收起 ⚙️）</button>
+    <div style="height:10px"></div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header" style="cursor:default">
+        <span style="font-size:14px;font-weight:800">☁️ 雲端同步（免費）</span>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <label>啟用 Supabase 同步</label>
+          <select id="set-sync-enabled">
+            <option value="off">Off（只用本機）</option>
+            <option value="on">On（多人同步編輯）</option>
+          </select>
+          <div class="time-hint">開咗之後，你同朋友用同一個 Trip ID 就會同步。未設定都唔會影響本機使用。</div>
+        </div>
+        <div class="input-group">
+          <label>Supabase Project URL</label>
+          <input type="url" id="set-supabase-url" placeholder="例如：https://xxxx.supabase.co">
+        </div>
+        <div class="input-group">
+          <label>Supabase anon key</label>
+          <textarea id="set-supabase-anon" placeholder="貼入 anon public key（唔係 service_role）" style="height:78px"></textarea>
+        </div>
+        <div class="input-group">
+          <label>Trip ID（同朋友共享）</label>
+          <input type="text" id="set-trip-id" placeholder="例如：usa-west-2026">
+        </div>
+        <div class="input-group">
+          <label>我嘅顯示名</label>
+          <input type="text" id="set-user-name" placeholder="例如：Sam">
+        </div>
+        <button class="btn-secondary" onclick="connectCloudSync()">🔌 連接 / 重新連接</button>
+        <div id="sync-status" style="font-size:12px;color:var(--text3);line-height:1.6"></div>
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-settings')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Owner: setup PIN -->
+<div class="modal-bg" id="modal-owner-setup">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="ownerSetupTitle">🔐 設定 Owner PIN</h3>
+    <div class="time-hint" style="margin-top:-6px;margin-bottom:10px">PIN 只會存喺你部機（唔會上雲）。朋友用手機開同一個 Trip 都唔會自動有 PIN。</div>
+    <div class="input-group">
+      <label data-i18n="ownerPinLabel">輸入 PIN（4–8 位數字）</label>
+      <input id="owner-pin-a" inputmode="numeric" pattern="\\d*" maxlength="8" autocomplete="new-password" placeholder="例如：6488">
+    </div>
+    <div class="input-group">
+      <label data-i18n="ownerPinConfirmLabel">再輸入一次確認</label>
+      <input id="owner-pin-b" inputmode="numeric" pattern="\\d*" maxlength="8" autocomplete="new-password" placeholder="再輸入一次">
+    </div>
+    <button class="btn-primary" onclick="setOwnerPinFromInputs()" data-i18n="ownerSavePin">✅ 儲存 PIN</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-owner-setup')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Owner: unlock -->
+<div class="modal-bg" id="modal-owner-unlock">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="ownerUnlockTitle">🔐 解鎖設定</h3>
+    <div class="input-group">
+      <label data-i18n="ownerUnlockPinLabel">輸入 PIN</label>
+      <input id="owner-pin-unlock" inputmode="numeric" pattern="\\d*" maxlength="8" autocomplete="current-password" placeholder="PIN">
+    </div>
+    <button class="btn-primary" onclick="tryUnlockOwnerFromInputs()" data-i18n="ownerUnlockBtn">✅ 解鎖</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-owner-unlock')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Add Spot Modal -->
+<div class="modal-bg" id="modal-add-spot">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="spot-modal-title">➕ 新增景點</h3>
+    <div class="input-group">
+      <label data-i18n="spotNameLabel">景點名稱</label>
+      <input type="text" id="new-spot-name" placeholder="例如：淺草寺" data-i18n-placeholder="spotNamePlaceholder">
+    </div>
+    <div class="input-group">
+      <label data-i18n="timeLabel">時間</label>
+      <div class="time-row">
+        <input type="time" id="new-spot-start" value="09:00">
+        <input type="time" id="new-spot-end" value="10:00">
+      </div>
+      <div class="time-hint" data-i18n="spotTimeHint">左邊開始，右邊結束；會自動按開始時間排序。</div>
+    </div>
+    <div class="input-group">
+      <label data-i18n="descLabel">描述 / 備注</label>
+      <textarea id="new-spot-desc" placeholder="例如：記得帶相機！早去人少啲" data-i18n-placeholder="spotDescPlaceholder"></textarea>
+    </div>
+    <div class="input-group">
+      <label data-i18n="mapAddressLabel">Google Map 地址（可選）</label>
+      <input type="text" id="new-spot-addr" placeholder="例如：淺草寺,東京 或貼入地址" data-i18n-placeholder="mapAddressPlaceholder">
+    </div>
+    <div class="input-group">
+      <label data-i18n="iconLabel">圖示</label>
+      <div class="chips" id="emoji-picker">
+        <span>🏯</span><span>🗼</span><span>⛩️</span><span>🌸</span><span>🍜</span><span>🍣</span>
+        <span>🛍️</span><span>🎢</span><span>🏖️</span><span>⛰️</span><span>🎭</span><span>🏛️</span>
+        <span>🚂</span><span>🛶</span><span>🎡</span><span>🌊</span><span>🦁</span><span>🎪</span>
+      </div>
+      <input type="text" id="new-spot-emoji" value="📍" maxlength="2" style="margin-top:8px">
+    </div>
+    <input type="hidden" id="new-spot-day">
+    <input type="hidden" id="edit-spot-index" value="-1">
+    <button class="btn-primary" id="spot-save-btn" onclick="saveSpot()">✅ 加入行程</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-add-spot')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Spot Detail Modal -->
+<div class="modal-bg" id="modal-spot-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="spot-detail-content"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-spot-detail')" data-i18n="close">關閉</button>
+  </div>
+</div>
+
+<!-- Add Person Modal -->
+<div class="modal-bg" id="modal-add-person">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="addPersonTitle">👤 新增成員</h3>
+    <div class="input-group">
+      <label data-i18n="personNameLabel">姓名 / 暱稱</label>
+      <input type="text" id="new-person-name" placeholder="例如：小明" data-i18n-placeholder="personNamePlaceholder">
+    </div>
+    <button class="btn-primary" onclick="addPerson()" data-i18n="joinBtn">✅ 加入</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-add-person')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-bg" id="modal-add-expense">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="addExpenseTitle">💳 記錄支出</h3>
+    <div class="input-group">
+      <label data-i18n="expenseNameLabel">項目名稱</label>
+      <input type="text" id="exp-name" placeholder="例如：晚飯" data-i18n-placeholder="expenseNamePlaceholder">
+    </div>
+    <div class="input-group">
+      <label data-i18n="amountHkdLabel">金額（港幣）</label>
+      <input type="number" id="exp-amount" placeholder="0.00">
+    </div>
+    <div class="input-group">
+      <label data-i18n="payerLabel">由誰付款</label>
+      <select id="exp-payer" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:inherit;font-size:14px"></select>
+    </div>
+    <div class="input-group">
+      <label data-i18n="splitMembersLabel">分攤成員（可多選）</label>
+      <div id="exp-split-persons" class="chips" style="margin-top:0"></div>
+    </div>
+    <div class="input-group">
+      <label data-i18n="categoryLabel">類別</label>
+      <select id="exp-category" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:inherit;font-size:14px">
+        <option value="🍽️ 飲食">🍽️ 飲食</option>
+        <option value="🏨 住宿">🏨 住宿</option>
+        <option value="🚌 交通">🚌 交通</option>
+        <option value="🎟️ 門票">🎟️ 門票</option>
+        <option value="🛍️ 購物">🛍️ 購物</option>
+        <option value="💊 醫療">💊 醫療</option>
+        <option value="📦 其他">📦 其他</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="addExpense()" data-i18n="recordBtn">✅ 記錄</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-add-expense')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal-bg" id="modal-add-note">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 data-i18n="addNoteTitle">📝 新增備忘</h3>
+    <div class="input-group">
+      <label data-i18n="noteTitleLabel">標題</label>
+      <input type="text" id="note-title-input" placeholder="例如：訂位確認號" data-i18n-placeholder="noteTitlePlaceholder">
+    </div>
+    <div class="input-group">
+      <label data-i18n="noteBodyLabel">內容</label>
+      <textarea id="note-body-input" placeholder="輸入備忘內容..." data-i18n-placeholder="noteBodyPlaceholder"></textarea>
+    </div>
+    <button class="btn-primary" onclick="addNote()" data-i18n="saveBtn">✅ 儲存</button>
+    <div style="height:12px"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-add-note')" data-i18n="cancel">取消</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  tripName: '✈️ 我的旅程',
+  startDate: '',
+  days: 7,
+  headerImages: { itinerary:'', expense:'', translate:'', currency:'', notes:'' },
+  // Local-only lock (not synced to cloud JSON)
+  owner: {
+    pinHash: '',
+    salt: '',
+    unlockUntil: 0
+  },
+  sync: {
+    enabled: false,
+    supabaseUrl: '',
+    supabaseAnonKey: '',
+    tripId: '',
+    userName: '',
+    lastPullAt: 0,
+    lastPushAt: 0
+  },
+  rev: 0,
+  spots: {},      // { day: [ {id,name,time,desc,addr,emoji,done,starred,people,note} ] }
+  persons: [],    // ['小明','小花']
+  expenses: [],   // {id,name,amount,payer,split,category}
+  notes: [],      // {id,title,body,date}
+  checklist: [],  // {id,text,done}
+  customRates: {} // {JPY:17.5}
+};
+
+let selectedDay = 1;
+
+// ============================================================
+// Cloud sync (Supabase)
+// ============================================================
+let supabaseClient = null;
+let supabaseChannel = null;
+let pushTimer = null;
+let isApplyingRemote = false;
+
+function setSyncStatus(text){
+  const el=document.getElementById('sync-status');
+  if(el) el.innerHTML=text;
+}
+
+function getSafeTripId(){
+  const raw=(state.sync&&state.sync.tripId)||'';
+  return raw.trim();
+}
+
+function canUseCloud(){
+  return !!(state.sync && state.sync.enabled && state.sync.supabaseUrl && state.sync.supabaseAnonKey && getSafeTripId());
+}
+
+async function connectCloudSync(){
+  try{
+    // read settings fields into state first (so user can press "connect" without saving full settings)
+    const enabled=document.getElementById('set-sync-enabled')?.value==='on';
+    state.sync.enabled=enabled;
+    state.sync.supabaseUrl=(document.getElementById('set-supabase-url')?.value||'').trim();
+    state.sync.supabaseAnonKey=(document.getElementById('set-supabase-anon')?.value||'').trim();
+    state.sync.tripId=(document.getElementById('set-trip-id')?.value||'').trim();
+    state.sync.userName=(document.getElementById('set-user-name')?.value||'').trim();
+    saveStateLocal();
+
+    if(!canUseCloud()){
+      setSyncStatus('狀態：未啟用或未填齊資料（仍然會用本機儲存）。');
+      await disconnectCloudSync();
+      return;
+    }
+
+    const { createClient } = window.supabase;
+    supabaseClient = createClient(state.sync.supabaseUrl, state.sync.supabaseAnonKey);
+    setSyncStatus('狀態：連接中...');
+
+    await pullFromCloud({ preferRemote: true });
+    await subscribeToTrip();
+    setSyncStatus(`狀態：已連接 ✅（Trip ID：<b>${escapeHtml(getSafeTripId())}</b>）`);
+  }catch(e){
+    setSyncStatus('狀態：連接失敗（會用本機儲存）。<br>請檢查 URL / anon key / Trip ID。');
+    await disconnectCloudSync();
+  }
+}
+
+async function disconnectCloudSync(){
+  try{
+    if(supabaseChannel){
+      await supabaseChannel.unsubscribe();
+      supabaseChannel=null;
+    }
+  }catch(e){}
+  supabaseClient=null;
+}
+
+async function subscribeToTrip(){
+  if(!supabaseClient) return;
+  if(supabaseChannel){
+    try{ await supabaseChannel.unsubscribe(); }catch(e){}
+    supabaseChannel=null;
+  }
+  const tripId=getSafeTripId();
+  supabaseChannel = supabaseClient.channel(`trip-${tripId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'trips', filter: `id=eq.${tripId}` }, async (payload)=>{
+      // Remote update landed — pull latest
+      if(isApplyingRemote) return;
+      await pullFromCloud({ preferRemote: true });
+    });
+  await supabaseChannel.subscribe();
+}
+
+async function ensureTripRow(){
+  const tripId=getSafeTripId();
+  const payload = {
+    id: tripId,
+    data: exportStateForCloud(),
+    rev: state.rev||0,
+    updated_by: (state.sync&&state.sync.userName)||null,
+    updated_at: new Date().toISOString()
+  };
+  // upsert to create row
+  const { error } = await supabaseClient
+    .from('trips')
+    .upsert(payload, { onConflict: 'id' });
+  if(error) throw error;
+}
+
+function exportStateForCloud(){
+  // keep secrets out (anonKey is public; still avoid writing it into shared DB)
+  const copy = JSON.parse(JSON.stringify(state));
+  if(copy.sync){
+    copy.sync.supabaseAnonKey = '';
+  }
+  // Never sync owner PIN lock metadata
+  delete copy.owner;
+  return copy;
+}
+
+async function pullFromCloud({ preferRemote }){
+  if(!supabaseClient) return;
+  const tripId=getSafeTripId();
+
+  // Make sure a row exists (first user creates it)
+  await ensureTripRow();
+
+  const { data, error } = await supabaseClient
+    .from('trips')
+    .select('data,rev,updated_at,updated_by')
+    .eq('id', tripId)
+    .maybeSingle();
+  if(error) throw error;
+  if(!data || !data.data) return;
+
+  const remoteState = data.data;
+  const remoteRev = data.rev || 0;
+  const localRev = state.rev || 0;
+
+  // preferRemote: last-write-wins by rev
+  if(preferRemote && remoteRev >= localRev){
+    isApplyingRemote = true;
+    try{
+      // merge: keep local sync config + anon key
+      const keepSync = { ...(state.sync||{}) };
+      const keepAnon = keepSync.supabaseAnonKey;
+      const keepOwner = { ...(state.owner||{}) };
+      state = remoteState;
+      state.sync = { ...(state.sync||{}), ...keepSync };
+      state.sync.supabaseAnonKey = keepAnon;
+      state.owner = { ...(keepOwner||{}), ...(state.owner||{}) };
+      state.rev = remoteRev;
+      normalizeState();
+      saveStateLocal();
+      applyLanguage();
+      renderDayGrid();
+      if(document.getElementById('day-detail-area').innerHTML.trim()) openDayDetail(selectedDay);
+      renderExpense();
+      renderNotes();
+      calcCurrency();
+      renderCustomRates();
+    } finally {
+      isApplyingRemote = false;
+    }
+  }
+}
+
+function schedulePushToCloud(){
+  if(!canUseCloud() || !supabaseClient) return;
+  if(pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>pushToCloud().catch(()=>{}), 650);
+}
+
+async function pushToCloud(){
+  if(!canUseCloud() || !supabaseClient) return;
+  const tripId=getSafeTripId();
+  const nextRev=(state.rev||0)+1;
+  const payload = {
+    id: tripId,
+    data: exportStateForCloud(),
+    rev: nextRev,
+    updated_by: (state.sync&&state.sync.userName)||null,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await supabaseClient
+    .from('trips')
+    .upsert(payload, { onConflict: 'id' });
+  if(error) throw error;
+  state.rev = nextRev;
+  state.sync.lastPushAt = Date.now();
+  saveStateLocal();
+}
+
+function escapeHtml(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+// Phrases database
+const PHRASES = {
+  Japanese: [
+    {cat:'基本', items:[
+      {c:'你好','t':'こんにちは','p':'Konnichiwa'},
+      {c:'謝謝','t':'ありがとうございます','p':'Arigatou gozaimasu'},
+      {c:'唔好意思','t':'すみません','p':'Sumimasen'},
+      {c:'唔係','t':'いいえ','p':'Iie'},
+      {c:'係','t':'はい','p':'Hai'},
+    ]},
+    {cat:'飲食', items:[
+      {c:'唔食辣','t':'辛いものは食べられません','p':'Karai mono wa taberaremasen'},
+      {c:'過敏花生','t':'ピーナッツアレルギーがあります','p':'Pinattsu arerugii ga arimasu'},
+      {c:'唔食肉','t':'肉は食べません','p':'Niku wa tabemasen'},
+      {c:'好食！','t':'おいしい！','p':'Oishii!'},
+      {c:'埋單','t':'お会計をお願いします','p':'Okaikei wo onegaishimasu'},
+      {c:'要張收據','t':'レシートをください','p':'Reshiito wo kudasai'},
+    ]},
+    {cat:'問路', items:[
+      {c:'廁所喺邊？','t':'トイレはどこですか？','p':'Toire wa doko desu ka?'},
+      {c:'地鐵站喺邊？','t':'地下鉄の駅はどこですか？','p':'Chikatetsu no eki wa doko desu ka?'},
+      {c:'我唔識路','t':'道に迷いました','p':'Michi ni mayoimashita'},
+    ]},
+    {cat:'購物', items:[
+      {c:'幾多錢？','t':'いくらですか？','p':'Ikura desu ka?'},
+      {c:'可唔可以平啲？','t':'値引きできますか？','p':'Nebiki dekimasu ka?'},
+      {c:'我只係睇下','t':'見ているだけです','p':'Mite iru dake desu'},
+    ]},
+  ],
+  Korean: [
+    {cat:'基本', items:[
+      {c:'你好','t':'안녕하세요','p':'Annyeonghaseyo'},
+      {c:'謝謝','t':'감사합니다','p':'Gamsahamnida'},
+      {c:'唔好意思','t':'실례합니다','p':'Sillyehamnida'},
+    ]},
+    {cat:'飲食', items:[
+      {c:'唔食辣','t':'매운 것은 못 먹어요','p':'Maeun geoseun mot meogeoyo'},
+      {c:'好食！','t':'맛있어요!','p':'Massisseoyo!'},
+      {c:'埋單','t':'계산해 주세요','p':'Gyesan hae juseyo'},
+    ]},
+    {cat:'問路', items:[
+      {c:'廁所喺邊？','t':'화장실이 어디예요?','p':'Hwajangsiri eodiyeyo?'},
+    ]},
+    {cat:'購物', items:[
+      {c:'幾多錢？','t':'얼마예요?','p':'Eolmayeyo?'},
+      {c:'有無免稅？','t':'면세 되나요?','p':'Myeonse doenayo?'},
+    ]},
+  ],
+  Thai: [
+    {cat:'基本', items:[
+      {c:'你好','t':'สวัสดี','p':'Sawadee'},
+      {c:'謝謝','t':'ขอบคุณ','p':'Khob khun'},
+      {c:'係','t':'ใช่','p':'Chai'},
+    ]},
+    {cat:'飲食', items:[
+      {c:'唔辣','t':'ไม่เผ็ด','p':'Mai phet'},
+      {c:'好食！','t':'อร่อยมาก!','p':'Aroi mak!'},
+      {c:'埋單','t':'เก็บเงิน','p':'Kep ngern'},
+    ]},
+    {cat:'問路', items:[
+      {c:'廁所喺邊？','t':'ห้องน้ำอยู่ที่ไหน?','p':'Hong nam yu thi nai?'},
+    ]},
+    {cat:'購物', items:[
+      {c:'幾多錢？','t':'ราคาเท่าไหร่?','p':'Rakha thao rai?'},
+      {c:'平啲得唔得？','t':'ลดราคาได้ไหม?','p':'Lot rakha dai mai?'},
+    ]},
+  ],
+  Vietnamese: [
+    {cat:'基本', items:[
+      {c:'你好','t':'Xin chào','p':'Sin chow'},
+      {c:'謝謝','t':'Cảm ơn','p':'Gam un'},
+    ]},
+    {cat:'飲食', items:[
+      {c:'唔食辣','t':'Tôi không ăn cay','p':'Toy khong an kay'},
+      {c:'埋單','t':'Tính tiền','p':'Ting tyen'},
+    ]},
+    {cat:'問路', items:[
+      {c:'廁所喺邊？','t':'Nhà vệ sinh ở đâu?','p':'Nya veh sinh uh daw?'},
+    ]},
+    {cat:'購物', items:[
+      {c:'幾多錢？','t':'Bao nhiêu tiền?','p':'Bow nyew tyen?'},
+    ]},
+  ],
+  English: [
+    {cat:'Restaurant', items:[
+      {c:'唔食辣','t':'I cannot eat spicy food','p':''},
+      {c:'過敏','t':'I have a food allergy','p':''},
+      {c:'埋單','t':'Check, please!','p':''},
+    ]},
+    {cat:'Directions', items:[
+      {c:'廁所喺邊','t':'Where is the restroom?','p':''},
+    ]},
+  ],
+};
+
+// FX rates (approx, relative to 1 HKD)
+const FX_RATES = {
+  HKD:1, CNY:0.917, USD:0.128, TWD:4.12, JPY:19.8, KRW:177,
+  THB:4.58, EUR:0.118, GBP:0.101, SGD:0.173, MYR:0.6, AUD:0.2, CAD:0.176
+};
+
+// Emoji maps
+const CURRENCY_FLAG = {HKD:'🇭🇰',CNY:'🇨🇳',USD:'🇺🇸',TWD:'🇹🇼',JPY:'🇯🇵',KRW:'🇰🇷',THB:'🇹🇭',EUR:'🇪🇺',GBP:'🇬🇧',SGD:'🇸🇬',MYR:'🇲🇾',AUD:'🇦🇺',CAD:'🇨🇦'};
+
+const I18N = {
+  zh: {
+    navItinerary:'行程', navExpense:'分帳', navTranslate:'翻譯', navCurrency:'匯率', navNotes:'備忘',
+    settingsTitle:'⚙️ 行程設定', language:'語言', tripNameLabel:'旅行名稱', startDateLabel:'出發日期',
+    daysLabel:'旅行天數', saveSettings:'💾 儲存設定', cancel:'取消',
+    ownerHint:'（Owner：長按標題解鎖設定；朋友版唔會見到 ⚙️）',
+    ownerUnlockTitle:'🔐 解鎖設定',
+    ownerSetupTitle:'🔐 設定 Owner PIN',
+    ownerPinLabel:'輸入 PIN（4–8 位數字）',
+    ownerPinConfirmLabel:'再輸入一次確認',
+    ownerUnlockPinLabel:'輸入 PIN',
+    ownerSavePin:'✅ 儲存 PIN',
+    ownerUnlockBtn:'✅ 解鎖',
+    ownerLockNow:'🔒 立即鎖定（收起 ⚙️）',
+    ownerWrongPin:'PIN 唔啱',
+    ownerPinMismatch:'兩次 PIN 唔一致',
+    ownerPinWeak:'PIN 太短',
+    ownerNeedPin:'未設定 PIN：請先解鎖並設定（只會存喺你部機）',
+    travelMinutes:(m)=>`約 ${m} 分鐘車程`,
+    travelUnknown:'未能估算（地址/定位未齊）',
+    travelComputing:'計算緊…',
+    tripDefault:'✈️ 我的旅程', tripHint:'點擊日期查看詳細行程',
+    tripSubtitleDate:(date,days)=>{
+      const p=parseISODateLocal(date);
+      const nice = p ? `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}` : date;
+      return `出發日期：${nice}，共 ${days} 日`;
+    },
+    tripSubtitleDays:(days)=>`共 ${days} 日行程，點擊日期查看詳細`,
+    dayLabel:(d)=>`第${d}日`, dayTitle:(d)=>`第 ${d} 日行程`, addSpot:'+ 景點',
+    plan:'行程', googleMap:'Google Map', noSpot:'乜景點都未L有<br>撳「+ 景點」加入行程',
+    mapAddTitle:'🗺️ 從地圖搜尋加入行程', mapSearchPlaceholder:'輸入景點名 / 地址，例如：淺草寺 東京',
+    preview:'預覽', mapBasePlaceholder:'根據邊度推薦？例如：淺草寺 東京',
+    recommendTitle:'附近推薦', addToday:'＋ 加入今日行程',
+    mapTimeHint:'加入前要揀時間，行程會即刻按開始時間排序。',
+    mapHelper:'普通 embedded Google Map 讀唔到你喺地圖入面篤中邊個景點；呢度用搜尋字作景點名同地址，加入後仍然可以再編輯。',
+    mapEmpty:'呢日未有景點地址。<br>搜尋景點後撳「加入今日行程」就會出現喺行程。',
+    openGoogle:'🧭 用 Google Map 開啟', done:'✅ 已標記', mark:'⬜ 標記', edit:'✏️ 編輯', detail:'📋 詳細',
+    fromMap:'由 Google Map 搜尋加入', fromReco:'由 Google Map 推薦搜尋加入',
+    alerts:{ query:'請先輸入景點名或地址', base:'請先輸入推薦參考地點', time:'請先揀開始同結束時間', order:'結束時間唔可以早過開始時間，用下腦啦' },
+    reco:[
+      ['restaurant','🍽️ 餐廳'], ['cafe','☕ 咖啡'], ['attractions','📸 景點'], ['shopping','🛍️ 購物'], ['dessert','🍰 甜品'], ['station','🚇 車站']
+    ],
+    expenseTitle:'💰 分帳計算', expenseSubtitle:'你老母唔洗比呀？',
+    expTabRecord:'記錄', expTabSettle:'結算', expTabSummary:'總覽',
+    tripMembers:'👥 智仔團友', addPersonBtn:'+ 加人', expenseRecords:'支出記錄', addExpenseBtn:'+ 記帳',
+    settlePlan:'💡 結算方案', expenseOverview:'📊 消費總覽',
+    translateTitle:'📷 旅行即影翻譯', translateSubtitle:'唔識就問啦，死頂有咩用？',
+    transTabCamera:'相機翻譯', transTabText:'文字翻譯', transTabPhrase:'常用句',
+    cameraHero:'影 menu / 招牌 / 包裝文字', cameraHelp:'手機會開相機；電腦就可以揀相。之後可以貼 OCR 出嚟嘅文字，app 會解釋意思、點叫、點讀。',
+    openCameraBtn:'📷 開相機 / 揀相', cameraTextLabel:'相片入面嘅文字（可用手機相簿/系統 OCR 複製後貼上）',
+    targetViewLabel:'我想睇', cameraTranslateBtn:'🔎 解讀同教我點讀', analysisResult:'解讀結果',
+    translateTo:'翻譯成', inputTextLabel:'輸入文字（廣東話/英文/任何語言）', translateBtn:'🔄 翻譯',
+    translationResult:'翻譯結果', listenPronunciation:'🔊 聆聽讀音', sourceMeaning:'原文意思（廣東話）',
+    chooseLanguage:'選擇語言',
+    currencyTitle:'💱 匯率計算', currencySubtitle:'快速換算旅行貨幣', amountLabel:'輸入金額',
+    customRateTitle:'✏️ 自訂匯率', customRateHelp:'可以係兌換處攞到匯率後自行輸入', perHkd:'= 1 HKD', setBtn:'設定',
+    notesTitle:'📝 備忘 & 標記', notesSubtitle:'重要事項、打卡清單',
+    noteTabNotes:'備忘錄', noteTabChecklist:'打卡清單', noteTabBookmarks:'書籤景點',
+    addNoteBtn:'✏️ 新增備忘', checkPlaceholder:'新增待辦...', addBtn:'+ 加',
+    bookmarkHelp:'⭐ 喺行程頁面撳星星就會出現喺呢度',
+    spotNameLabel:'景點名稱', spotNamePlaceholder:'例如：淺草寺', timeLabel:'時間',
+    spotTimeHint:'左邊開始，右邊結束；會自動按開始時間排序。',
+    descLabel:'描述 / 備注', spotDescPlaceholder:'例如：記得帶相機！早去人少啲',
+    mapAddressLabel:'Google Map 地址（可選）', mapAddressPlaceholder:'例如：淺草寺,東京 或貼入地址',
+    iconLabel:'圖示', close:'關閉', addPersonTitle:'👤 新增成員', personNameLabel:'姓名 / 暱稱',
+    personNamePlaceholder:'例如：狗恩', joinBtn:'✅ 加入', addExpenseTitle:'💳 記錄支出',
+    expenseNameLabel:'項目名稱', expenseNamePlaceholder:'例如：晚飯', amountHkdLabel:'金額（港幣）',
+    payerLabel:'由誰付款', splitMembersLabel:'分攤成員（可多選）', categoryLabel:'類別',
+    recordBtn:'✅ 記錄', addNoteTitle:'📝 新增備忘', noteTitleLabel:'標題',
+    noteTitlePlaceholder:'例如：訂位確認號', noteBodyLabel:'內容', noteBodyPlaceholder:'輸入備忘內容...',
+    saveBtn:'✅ 儲存',
+    addSpotTitle:'➕ 新增景點', editSpotTitle:'✏️ 編輯景點', addToItinerary:'✅ 加入行程', saveChanges:'💾 儲存修改',
+    spotNameRequired:'入名啦盲L左？', deleteSpotConfirm:'真係要Del左佢？', saveNote:'💾 儲存筆記', saved:'搞撚掂！',
+    noMembers:'未有成員，撳「+ 加人」加入', invalidName:'入名啦碌柒', completeExpense:'寫好少少啦',
+    noExpenses:'仲未比過錢', deleteBtn:'🗑️ 刪除', addMembersFirst:'請先加入成員', balanced:'🎉 大家已係平衡狀態！',
+    totalSpend:'總支出', photoAddedPlaceholder:'相片已加入。可以用手機相簿/Live Text/Google Lens 複製文字後貼喺呢度，再撳解讀。',
+    ocrFailPlaceholder:'OCR 暫時讀唔到。可以手動貼上相片入面嘅文字，再撳解讀。',
+    cameraTextRequired:'請先影相，或者貼上相片入面嘅文字', analyzing:'解讀中', translating:'翻譯中',
+    translateFail:'翻譯失敗，請重試', menuRequired:'請輸入菜單內容', menuAnalyzing:'解讀菜單', menuFail:'解讀失敗，請重試',
+    noTranslation:'未有翻譯內容', invalidRate:'請輸入有效匯率', ratesSet:'已設定匯率：',
+    titleRequired:'請輸入標題', noNotes:'未有備忘', noBookmarks:'暫時未有書籤景點',
+    menuInputLabel:'輸入菜單名稱（日文/韓文/泰文...）', targetLanguage:'目標語言', menuTranslateBtn:'🍽️ 解讀菜單', menuExplanation:'菜單解說'
+  },
+  en: {
+    navItinerary:'Itinerary', navExpense:'Split', navTranslate:'Translate', navCurrency:'FX', navNotes:'Notes',
+    settingsTitle:'⚙️ Trip Settings', language:'Language', tripNameLabel:'Trip name', startDateLabel:'Start date',
+    daysLabel:'Trip length', saveSettings:'💾 Save Settings', cancel:'Cancel',
+    ownerHint:'(Owner: long-press the title to unlock settings. Friends won’t see ⚙️.)',
+    ownerUnlockTitle:'🔐 Unlock settings',
+    ownerSetupTitle:'🔐 Set Owner PIN',
+    ownerPinLabel:'PIN (4–8 digits)',
+    ownerPinConfirmLabel:'Confirm PIN',
+    ownerUnlockPinLabel:'Enter PIN',
+    ownerSavePin:'✅ Save PIN',
+    ownerUnlockBtn:'✅ Unlock',
+    ownerLockNow:'🔒 Lock now (hide ⚙️)',
+    ownerWrongPin:'Incorrect PIN',
+    ownerPinMismatch:'PINs do not match',
+    ownerPinWeak:'PIN too short',
+    ownerNeedPin:'No PIN yet: unlock once to set it (stored on this device only).',
+    travelMinutes:(m)=>`~${m} min drive`,
+    travelUnknown:'Can’t estimate (missing address/location)',
+    travelComputing:'Calculating…',
+    tripDefault:'✈️ My Trip', tripHint:'Tap a day to view details',
+    tripSubtitleDate:(date,days)=>{
+      const p=parseISODateLocal(date);
+      const nice = p ? `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}` : date;
+      return `Start date: ${nice}, ${days} days`;
+    },
+    tripSubtitleDays:(days)=>`${days} day itinerary. Tap a day to view details`,
+    dayLabel:(d)=>`Day ${d}`, dayTitle:(d)=>`Day ${d} Itinerary`, addSpot:'+ Spot',
+    plan:'Plan', googleMap:'Google Map', noSpot:'No spots yet<br>Tap “+ Spot” to add one',
+    mapAddTitle:'🗺️ Search Map and Add to Plan', mapSearchPlaceholder:'Spot name / address, e.g. Sensoji Tokyo',
+    preview:'Preview', mapBasePlaceholder:'Recommend near where? e.g. Sensoji Tokyo',
+    recommendTitle:'Nearby ideas', addToday:'＋ Add to Today',
+    mapTimeHint:'Pick a time before adding. The itinerary will sort by start time.',
+    mapHelper:'Embedded Google Maps cannot tell this app which POI you tapped. This uses your search text as the spot name/address, and you can edit it after adding.',
+    mapEmpty:'No mapped spots for this day yet.<br>Search a place and tap “Add to Today”.',
+    openGoogle:'🧭 Open in Google Maps', done:'✅ Marked', mark:'⬜ Mark', edit:'✏️ Edit', detail:'📋 Details',
+    fromMap:'Added from Google Map search', fromReco:'Added from Google Map recommendation search',
+    alerts:{ query:'Enter a spot name or address first', base:'Enter a base location first', time:'Pick both start and end time', order:'End time cannot be earlier than start time' },
+    reco:[
+      ['restaurant','🍽️ Restaurants'], ['cafe','☕ Cafes'], ['attractions','📸 Attractions'], ['shopping','🛍️ Shopping'], ['dessert','🍰 Dessert'], ['station','🚇 Stations']
+    ],
+    expenseTitle:'💰 Split Expenses', expenseSubtitle:'Track spending and settle who owes whom',
+    expTabRecord:'Records', expTabSettle:'Settle', expTabSummary:'Summary',
+    tripMembers:'👥 Trip Members', addPersonBtn:'+ Person', expenseRecords:'Expense Records', addExpenseBtn:'+ Expense',
+    settlePlan:'💡 Settlement Plan', expenseOverview:'📊 Spending Overview',
+    translateTitle:'📷 Travel Camera Translator', translateSubtitle:'Translate menus, signs, packaging, and pronunciation on the road',
+    transTabCamera:'Camera', transTabText:'Text', transTabPhrase:'Phrases',
+    cameraHero:'Shoot menus / signs / packaging', cameraHelp:'Use your phone camera or choose a photo. Paste OCR text and the app explains the meaning, how to order, and pronunciation.',
+    openCameraBtn:'📷 Camera / Choose Photo', cameraTextLabel:'Text from the photo (paste OCR / Live Text here)',
+    targetViewLabel:'Show me', cameraTranslateBtn:'🔎 Explain and Teach Pronunciation', analysisResult:'Analysis Result',
+    translateTo:'Translate to', inputTextLabel:'Input text (Cantonese / English / any language)', translateBtn:'🔄 Translate',
+    translationResult:'Translation Result', listenPronunciation:'🔊 Listen', sourceMeaning:'Original meaning (Cantonese)',
+    chooseLanguage:'Choose language',
+    currencyTitle:'💱 Currency Converter', currencySubtitle:'Quick travel currency conversion', amountLabel:'Amount',
+    customRateTitle:'✏️ Custom Rate', customRateHelp:'Enter the rate you get from an exchange counter', perHkd:'= 1 HKD', setBtn:'Set',
+    notesTitle:'📝 Notes & Marks', notesSubtitle:'Important items, checklists, bookmarked spots',
+    noteTabNotes:'Notes', noteTabChecklist:'Checklist', noteTabBookmarks:'Bookmarks',
+    addNoteBtn:'✏️ Add Note', checkPlaceholder:'Add a task...', addBtn:'+ Add',
+    bookmarkHelp:'⭐ Tap the star on an itinerary spot and it will appear here',
+    spotNameLabel:'Spot name', spotNamePlaceholder:'e.g. Sensoji Temple', timeLabel:'Time',
+    spotTimeHint:'Start on the left, end on the right. Spots sort automatically by start time.',
+    descLabel:'Description / Notes', spotDescPlaceholder:'e.g. Bring camera. Go early to avoid crowds',
+    mapAddressLabel:'Google Map address (optional)', mapAddressPlaceholder:'e.g. Sensoji, Tokyo or paste an address',
+    iconLabel:'Icon', close:'Close', addPersonTitle:'👤 Add Member', personNameLabel:'Name / nickname',
+    personNamePlaceholder:'e.g. Alex', joinBtn:'✅ Add', addExpenseTitle:'💳 Record Expense',
+    expenseNameLabel:'Item name', expenseNamePlaceholder:'e.g. Dinner', amountHkdLabel:'Amount (HKD)',
+    payerLabel:'Paid by', splitMembersLabel:'Split between (multi-select)', categoryLabel:'Category',
+    recordBtn:'✅ Record', addNoteTitle:'📝 Add Note', noteTitleLabel:'Title',
+    noteTitlePlaceholder:'e.g. Booking confirmation', noteBodyLabel:'Content', noteBodyPlaceholder:'Enter note details...',
+    saveBtn:'✅ Save',
+    addSpotTitle:'➕ Add Spot', editSpotTitle:'✏️ Edit Spot', addToItinerary:'✅ Add to Itinerary', saveChanges:'💾 Save Changes',
+    spotNameRequired:'Enter a spot name', deleteSpotConfirm:'Delete this spot?', saveNote:'💾 Save Note', saved:'Saved!',
+    noMembers:'No members yet. Tap “+ Person” to add one', invalidName:'Enter a valid name', completeExpense:'Please complete all fields',
+    noExpenses:'No expense records yet', deleteBtn:'🗑️ Delete', addMembersFirst:'Add members first', balanced:'🎉 Everyone is settled up!',
+    totalSpend:'Total spent', photoAddedPlaceholder:'Photo added. Paste text from Live Text / Google Lens here, then run analysis.',
+    ocrFailPlaceholder:'OCR could not read this photo. Paste the visible text manually, then run analysis.',
+    cameraTextRequired:'Take a photo or paste text from the photo first', analyzing:'Analyzing', translating:'Translating',
+    translateFail:'Translation failed. Please try again', menuRequired:'Enter menu text', menuAnalyzing:'Analyzing menu', menuFail:'Menu analysis failed. Please try again',
+    noTranslation:'No translation yet', invalidRate:'Enter a valid exchange rate', ratesSet:'Custom rates:',
+    titleRequired:'Enter a title', noNotes:'No notes yet', noBookmarks:'No bookmarked spots yet',
+    menuInputLabel:'Enter menu text (Japanese / Korean / Thai...)', targetLanguage:'Target language', menuTranslateBtn:'🍽️ Explain Menu', menuExplanation:'Menu Explanation'
+  }
+};
+
+function t(key,...args){
+  const lang=state.lang||'zh';
+  const value=(I18N[lang]&&I18N[lang][key])||I18N.zh[key]||key;
+  return typeof value==='function'?value(...args):value;
+}
+
+function applyLanguage(){
+  document.documentElement.lang=state.lang==='en'?'en':'zh-HK';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{ el.placeholder=t(el.dataset.i18nPlaceholder); });
+  document.getElementById('lang-zh')?.classList.toggle('active',(state.lang||'zh')==='zh');
+  document.getElementById('lang-en')?.classList.toggle('active',state.lang==='en');
+  renderDayGrid();
+  if(document.getElementById('day-detail-area').innerHTML.trim()) openDayDetail(selectedDay);
+  renderExpense();
+  renderNotes();
+  calcCurrency();
+  renderCustomRates();
+  updateSettingsEntryUi();
+}
+
+function setLanguage(lang){
+  state.lang=lang;
+  saveState();
+  applyLanguage();
+}
+
+// ============================================================
+// LOAD / SAVE
+// ============================================================
+function loadState(){
+  try{
+    const s=localStorage.getItem('travel_app_v2');
+    if(s) state=JSON.parse(s);
+  }catch(e){}
+  normalizeState();
+}
+function normalizeState(){
+  state.spots=state.spots||{};
+  state.persons=state.persons||[];
+  state.expenses=state.expenses||[];
+  state.notes=state.notes||[];
+  state.checklist=state.checklist||[];
+  state.customRates=state.customRates||{};
+  state.days=Math.max(1,parseInt(state.days,10)||7);
+  state.lang=state.lang||'zh';
+  state.tripName=state.tripName||'✈️ 我的旅程';
+  state.headerImages = state.headerImages || { itinerary:'', expense:'', translate:'', currency:'', notes:'' };
+  state.sync = state.sync || { enabled:false, supabaseUrl:'', supabaseAnonKey:'', tripId:'', userName:'' };
+  state.rev = parseInt(state.rev||0,10)||0;
+  state.owner = state.owner || { pinHash:'', salt:'', unlockUntil:0 };
+  state.owner.unlockUntil = parseInt(state.owner.unlockUntil||0,10)||0;
+  Object.values(state.spots).forEach(spots=>{
+    spots.forEach(s=>{
+      if(!s.startTime&&s.time){
+        const match=s.time.match(/\d{1,2}:\d{2}/g);
+        if(match&&match[0]) s.startTime=match[0];
+        if(match&&match[1]) s.endTime=match[1];
+      }
+      delete s.count;
+    });
+  });
+}
+function saveStateLocal(){
+  try{ localStorage.setItem('travel_app_v2',JSON.stringify(state)); }catch(e){}
+}
+function saveState(){
+  saveStateLocal();
+  schedulePushToCloud();
+}
+
+// ============================================================
+// OWNER LOCK (local-only)
+// ============================================================
+const OWNER_SESSION_MS = 1000 * 60 * 60 * 6; // 6 hours
+let ownerPressTimer = null;
+
+function hasOwnerPin(){
+  return !!(state.owner && state.owner.pinHash && state.owner.salt);
+}
+
+function isSettingsUnlocked(){
+  return Date.now() < (state.owner?.unlockUntil || 0);
+}
+
+function unlockOwnerSession(ms){
+  const duration = typeof ms==='number' && ms>0 ? ms : OWNER_SESSION_MS;
+  state.owner.unlockUntil = Date.now() + duration;
+  saveStateLocal();
+}
+
+function lockSettingsNow(){
+  state.owner.unlockUntil = 0;
+  saveStateLocal();
+  updateSettingsEntryUi();
+}
+
+function updateSettingsEntryUi(){
+  const btn=document.getElementById('settings-btn');
+  if(!btn) return;
+  const show = hasOwnerPin() && isSettingsUnlocked();
+  btn.style.display = show ? 'inline-block' : 'none';
+  updateOwnerHintUi();
+}
+
+function updateOwnerHintUi(){
+  const hint=document.getElementById('owner-hint');
+  if(!hint) return;
+  // Friends shouldn't see any "how to unlock" hints once a PIN exists.
+  if(hasOwnerPin() && !isSettingsUnlocked()){
+    hint.style.display='none';
+    return;
+  }
+  hint.style.display='block';
+}
+
+function randSalt(){
+  try{
+    if(window.crypto && crypto.getRandomValues){
+      const bytes=new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  return `s${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`;
+}
+
+async function sha256Hex(text){
+  if(window.crypto && crypto.subtle){
+    const enc=new TextEncoder().encode(String(text));
+    const buf=await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  // fallback (non-crypto): still avoids storing plaintext PIN
+  let h=5381;
+  for(let i=0;i<text.length;i++) h=((h<<5)+h)^text.charCodeAt(i);
+  return 't'+(h>>>0).toString(16);
+}
+
+async function hashPin(pin, salt){
+  return sha256Hex(`${salt}:${pin}`);
+}
+
+async function setOwnerPinFromInputs(){
+  const a=document.getElementById('owner-pin-a')?.value||'';
+  const b=document.getElementById('owner-pin-b')?.value||'';
+  if(a.length<4 || a.length>8 || !/^\d+$/.test(a)){ alert(t('ownerPinWeak')); return; }
+  if(a!==b){ alert(t('ownerPinMismatch')); return; }
+  const salt = randSalt();
+  state.owner.salt = salt;
+  state.owner.pinHash = await hashPin(a, salt);
+  unlockOwnerSession();
+  saveStateLocal();
+  closeModal('modal-owner-setup');
+  document.getElementById('owner-pin-a').value='';
+  document.getElementById('owner-pin-b').value='';
+  openSettings();
+}
+
+async function tryUnlockOwnerFromInputs(){
+  const pin=document.getElementById('owner-pin-unlock')?.value||'';
+  if(!hasOwnerPin()){ alert(t('ownerNeedPin')); return; }
+  if(pin.length<4){ alert(t('ownerWrongPin')); return; }
+  const got = await hashPin(pin, state.owner.salt);
+  if(got !== state.owner.pinHash){ alert(t('ownerWrongPin')); return; }
+  unlockOwnerSession();
+  saveStateLocal();
+  closeModal('modal-owner-unlock');
+  document.getElementById('owner-pin-unlock').value='';
+  openSettings();
+}
+
+function openOwnerGate(){
+  normalizeState();
+  if(!hasOwnerPin()){
+    openModal('modal-owner-setup');
+    return;
+  }
+  if(isSettingsUnlocked()){
+    openSettings();
+    return;
+  }
+  openModal('modal-owner-unlock');
+}
+
+function bindOwnerGestures(){
+  const title=document.getElementById('trip-title');
+  if(!title) return;
+  const start = ()=>{
+    if(ownerPressTimer) clearTimeout(ownerPressTimer);
+    ownerPressTimer = setTimeout(()=>{
+      ownerPressTimer=null;
+      openOwnerGate();
+    }, 650);
+  };
+  const end = ()=>{
+    if(ownerPressTimer) clearTimeout(ownerPressTimer);
+    ownerPressTimer=null;
+  };
+  title.addEventListener('pointerdown', start);
+  title.addEventListener('pointerup', end);
+  title.addEventListener('pointercancel', end);
+  title.addEventListener('pointerleave', end);
+  title.addEventListener('contextmenu', (e)=>e.preventDefault());
+}
+
+function assertSettingsAccess(){
+  normalizeState();
+  if(!hasOwnerPin()){
+    alert(t('ownerNeedPin'));
+    return false;
+  }
+  if(!isSettingsUnlocked()){
+    openModal('modal-owner-unlock');
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
+// DATE HELPERS (avoid YYYY-MM-DD timezone shifts)
+// ============================================================
+function parseISODateLocal(ymd){
+  const s=String(ymd||'').trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  const y=parseInt(m[1],10), mo=parseInt(m[2],10), d=parseInt(m[3],10);
+  if(!y||!mo||!d) return null;
+  return { y, m:mo, d };
+}
+
+function addDaysToParts(parts, deltaDays){
+  const dt=new Date(parts.y, parts.m-1, parts.d);
+  dt.setDate(dt.getDate()+deltaDays);
+  return { y:dt.getFullYear(), m:dt.getMonth()+1, d:dt.getDate() };
+}
+
+function formatMonthDay(parts){
+  if(!parts) return '';
+  if(state.lang==='en'){
+    const mm=String(parts.m).padStart(2,'0');
+    const dd=String(parts.d).padStart(2,'0');
+    return `${mm}/${dd}`;
+  }
+  return `${parts.m}/${parts.d}`;
+}
+
+function formatLongDateZh(parts){
+  if(!parts) return '';
+  const dt=new Date(parts.y, parts.m-1, parts.d);
+  const dow=['日','一','二','三','四','五','六'];
+  return `${parts.m}月${parts.d}日（週${dow[dt.getDay()]}）`;
+}
+
+function formatLongDateEn(parts){
+  if(!parts) return '';
+  const dt=new Date(parts.y, parts.m-1, parts.d);
+  return dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='itinerary') renderDayGrid();
+  if(id==='expense') renderExpense();
+  if(id==='currency') calcCurrency();
+  if(id==='notes') renderNotes();
+  if(id==='translate') loadPhrases();
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+// Close on backdrop click
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); });
+});
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function saveSettings(){
+  if(!assertSettingsAccess()) return;
+  const newName=document.getElementById('set-trip-name').value.trim();
+  if(newName) state.tripName=newName;
+  state.startDate=document.getElementById('set-start-date').value;
+  const newDays=parseInt(document.getElementById('set-days').value)||7;
+  state.days=newDays;
+  state.headerImages.itinerary=(document.getElementById('set-bg-itinerary').value||'').trim();
+  state.headerImages.expense=(document.getElementById('set-bg-expense').value||'').trim();
+  state.headerImages.translate=(document.getElementById('set-bg-translate').value||'').trim();
+  state.headerImages.currency=(document.getElementById('set-bg-currency').value||'').trim();
+  state.headerImages.notes=(document.getElementById('set-bg-notes').value||'').trim();
+  state.sync.enabled = document.getElementById('set-sync-enabled')?.value==='on';
+  state.sync.supabaseUrl = (document.getElementById('set-supabase-url')?.value||'').trim();
+  // NOTE: keep anon key in local only; it won't be written into shared DB
+  state.sync.supabaseAnonKey = (document.getElementById('set-supabase-anon')?.value||'').trim();
+  state.sync.tripId = (document.getElementById('set-trip-id')?.value||'').trim();
+  state.sync.userName = (document.getElementById('set-user-name')?.value||'').trim();
+  selectedDay=Math.min(selectedDay,state.days);
+  document.getElementById('trip-title').textContent=state.tripName;
+  document.getElementById('trip-subtitle').textContent=state.startDate
+    ? t('tripSubtitleDate',state.startDate,state.days)
+    : t('tripSubtitleDays',state.days);
+  // Clear day detail area in case day count changed
+  document.getElementById('day-detail-area').innerHTML='';
+  applyHeaderImages();
+  saveState();
+  renderDayGrid();
+  closeModal('modal-settings');
+  // auto connect if enabled
+  connectCloudSync();
+}
+function updateDaysLabel(value){
+  const label=document.getElementById('set-days-label');
+  if(!label) return;
+  label.textContent = (state.lang==='en') ? `${value} days` : `${value} 日`;
+}
+function openSettings(){
+  if(!assertSettingsAccess()) return;
+  document.getElementById('set-trip-name').value=state.tripName;
+  document.getElementById('set-start-date').value=state.startDate;
+  document.getElementById('set-days').value=state.days;
+  updateDaysLabel(state.days);
+  document.getElementById('set-bg-itinerary').value=state.headerImages?.itinerary||'';
+  document.getElementById('set-bg-expense').value=state.headerImages?.expense||'';
+  document.getElementById('set-bg-translate').value=state.headerImages?.translate||'';
+  document.getElementById('set-bg-currency').value=state.headerImages?.currency||'';
+  document.getElementById('set-bg-notes').value=state.headerImages?.notes||'';
+  document.getElementById('set-sync-enabled').value=state.sync?.enabled?'on':'off';
+  document.getElementById('set-supabase-url').value=state.sync?.supabaseUrl||'';
+  document.getElementById('set-supabase-anon').value=state.sync?.supabaseAnonKey||'';
+  document.getElementById('set-trip-id').value=state.sync?.tripId||'';
+  document.getElementById('set-user-name').value=state.sync?.userName||'';
+  setSyncStatus(state.sync?.enabled?'狀態：未連接（撳「連接」）':'狀態：Off（只用本機）');
+  applyLanguage();
+  openModal('modal-settings');
+  updateSettingsEntryUi();
+}
+
+function applyHeaderImages(){
+  const map = [
+    ['itinerary','header-itinerary'],
+    ['expense','header-expense'],
+    ['translate','header-translate'],
+    ['currency','header-currency'],
+    ['notes','header-notes']
+  ];
+  map.forEach(([key,id])=>{
+    const url=(state.headerImages&&state.headerImages[key])||'';
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(url){
+      el.classList.add('has-bg');
+      el.style.setProperty('--header-bg', `url("${url.replace(/"/g,'&quot;')}")`);
+    }else{
+      el.classList.remove('has-bg');
+      el.style.removeProperty('--header-bg');
+    }
+  });
+}
+
+// ============================================================
+// ITINERARY
+// ============================================================
+function renderDayGrid(){
+  const grid=document.getElementById('day-grid');
+  grid.innerHTML='';
+  document.getElementById('trip-title').textContent=state.tripName;
+  const sub=document.getElementById('trip-subtitle');
+  if(sub) sub.textContent=state.startDate
+    ? t('tripSubtitleDate',state.startDate,state.days)
+    : t('tripSubtitleDays',state.days);
+  for(let d=1;d<=state.days;d++){
+    const spots=(state.spots[d]||[]);
+    let dateStr='';
+    if(state.startDate){
+      const base=parseISODateLocal(state.startDate);
+      if(base){
+        const parts=addDaysToParts(base, d-1);
+        dateStr=formatMonthDay(parts);
+      }
+    }
+    const btn=document.createElement('div');
+    btn.className=`day-btn ${d===selectedDay?'active-day':''}`;
+    btn.innerHTML=`
+      <div class="day-num">D${d}</div>
+      <div class="day-label">${t('dayLabel',d)}</div>
+      ${dateStr?`<div class="day-date">${dateStr}</div>`:''}
+      ${spots.length?`<span class="spot-count">${spots.length}</span>`:''}
+    `;
+    btn.onclick=()=>openDayDetail(d);
+    grid.appendChild(btn);
+  }
+}
+
+function openDayDetail(day){
+  selectedDay=day;
+  document.querySelectorAll('.day-btn').forEach((btn,i)=>btn.classList.toggle('active-day',i+1===day));
+  const area=document.getElementById('day-detail-area');
+  let dateStr='';
+  if(state.startDate){
+    const base=parseISODateLocal(state.startDate);
+    if(base){
+      const parts=addDaysToParts(base, day-1);
+      dateStr = (state.lang==='en') ? formatLongDateEn(parts) : formatLongDateZh(parts);
+    }
+  }
+  area.innerHTML=`
+    <div class="day-detail">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px">
+        <div>
+          <div class="day-heading">${t('dayTitle',day)}</div>
+          ${dateStr?`<div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.35">${dateStr}</div>`:''}
+        </div>
+        <button class="spot-tag tag-map" onclick="openAddSpot(${day})">${t('addSpot')}</button>
+      </div>
+      <div class="day-map" id="day-map-${day}" aria-label="Day map"></div>
+      <div class="timeline-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:900;color:var(--text)">🧭 今日路線</div>
+          <button class="spot-tag tag-note" onclick="refreshDayRoute(${day})">↻ 更新移動時間</button>
+        </div>
+        <div class="timeline" id="timeline-${day}">
+          <div id="spots-day-${day}"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  renderSpots(day);
+  renderDayMap(day);
+  area.scrollIntoView({behavior:'smooth'});
+}
+
+function renderSpots(day){
+  const el=document.getElementById(`spots-day-${day}`);
+  if(!el) return;
+  sortSpotsForDay(day);
+  const spots=state.spots[day]||[];
+  if(!spots.length){
+    el.innerHTML=`<div class="timeline-empty">${t('noSpot')}</div>`;
+    return;
+  }
+  // Timeline layout: rail/dots in left column, card in right column; travel time rows between cards.
+  el.innerHTML = spots.map((s,i)=>{
+    const card = `
+      <div class="timeline-item">
+        <div class="timeline-axis" aria-hidden="true">
+          <div class="timeline-dot"></div>
+        </div>
+        <div class="timeline-body">
+          <div class="spot-item ${s.done?'done':''}" id="spot-${day}-${i}">
+            <span class="star-mark" onclick="toggleStar(${day},${i})">${s.starred?'⭐':'☆'}</span>
+            <div class="spot-header">
+              <div class="spot-emoji">${s.emoji||'📍'}</div>
+              <div class="spot-info">
+                <div class="spot-name">${escapeHtml(s.name||'')}</div>
+                ${formatSpotTime(s)?`<div class="spot-time">🕐 ${escapeHtml(formatSpotTime(s))}</div>`:''}
+                ${s.desc?`<div class="spot-desc">${escapeHtml(s.desc)}</div>`:''}
+                ${(s.addr && (s.lat==null || s.lng==null))?`<div style="font-size:11px;color:var(--text3);margin-top:6px">📌 地址：${escapeHtml(s.addr)}</div>`:''}
+              </div>
+            </div>
+            <div class="spot-actions">
+              ${s.addr?`<button class="spot-tag tag-map" onclick="openMapByIndex(${day},${i})">🗺️ 地圖</button>`:''}
+              <button class="spot-tag tag-done ${s.done?'checked':''}" onclick="toggleDone(${day},${i})">${s.done?t('done'):t('mark')}</button>
+              <button class="spot-tag tag-map" onclick="openEditSpot(${day},${i})">${t('edit')}</button>
+              <button class="spot-tag tag-note" onclick="openSpotDetail(${day},${i})">${t('detail')}</button>
+              <button class="spot-tag" style="background:rgba(185,56,47,0.10);color:var(--danger)" onclick="deleteSpot(${day},${i})">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const travel = (i<spots.length-1) ? `
+      <div class="timeline-travel" id="travel-${day}-${i}">
+        <div class="travel-note">🚗 ${t('travelComputing')}</div>
+      </div>
+    ` : '';
+    return card + travel;
+  }).join('');
+  // update travel times async
+  refreshDayRoute(day);
+}
+
+function formatSpotTime(s){
+  if(s.startTime&&s.endTime) return `${s.startTime} - ${s.endTime}`;
+  if(s.startTime) return s.startTime;
+  return s.time||'';
+}
+
+function getSpotSortValue(s){
+  const match=(s.time||'').match(/\d{1,2}:\d{2}/);
+  const time=s.startTime||(match?match[0]:'');
+  if(!time) return 9999;
+  const [h,m]=time.split(':').map(n=>parseInt(n,10));
+  return (h||0)*60+(m||0);
+}
+
+function sortSpotsForDay(day){
+  if(!state.spots[day]) return;
+  state.spots[day].sort((a,b)=>getSpotSortValue(a)-getSpotSortValue(b));
+}
+
+let leafletMaps = {}; // day -> {map,layerGroup,polyline}
+
+function renderDayMap(day){
+  const el=document.getElementById(`day-map-${day}`);
+  if(!el) return;
+  sortSpotsForDay(day);
+
+  const spots=state.spots[day]||[];
+  // create map once
+  if(!leafletMaps[day]){
+    const map=L.map(el, { zoomControl:true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const layerGroup=L.layerGroup().addTo(map);
+    leafletMaps[day]={ map, layerGroup, polyline:null };
+    map.setView([36.1699, -115.1398], 5); // default: US West-ish
+  }else{
+    // if element re-rendered, Leaflet map container may break; rebuild if needed
+    try{ leafletMaps[day].map.invalidateSize(); }catch(e){}
+  }
+
+  // ensure coords
+  ensureDayGeocoded(day).finally(()=>{
+    drawDayPinsAndRoute(day);
+  });
+}
+
+async function ensureDayGeocoded(day){
+  const spots=state.spots[day]||[];
+  // only geocode items with addr/name but without lat/lng
+  for(const s of spots){
+    if((s.lat==null || s.lng==null) && (s.addr||s.name)){
+      const query=(s.addr||s.name).trim();
+      const geo = await geocodeNominatim(query).catch(()=>null);
+      if(geo){
+        s.lat=geo.lat;
+        s.lng=geo.lng;
+        s.geoLabel=geo.label;
+        saveState(); // triggers push
+      }
+      // be polite to public endpoint
+      await sleep(450);
+    }
+  }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function geocodeNominatim(query){
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+  const resp = await fetch(url, { headers: { 'Accept':'application/json' } });
+  if(!resp.ok) throw new Error('geocode failed');
+  const arr = await resp.json();
+  if(!arr || !arr[0]) return null;
+  return { lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon), label: arr[0].display_name };
+}
+
+function drawDayPinsAndRoute(day){
+  const ctx=leafletMaps[day];
+  if(!ctx) return;
+  const { map, layerGroup } = ctx;
+  layerGroup.clearLayers();
+  if(ctx.polyline){
+    try{ map.removeLayer(ctx.polyline); }catch(e){}
+    ctx.polyline=null;
+  }
+  const spots=(state.spots[day]||[]).filter(s=>typeof s.lat==='number' && typeof s.lng==='number');
+  if(!spots.length){
+    map.setView([36.1699, -115.1398], 5);
+    return;
+  }
+  const bounds=[];
+  spots.forEach((s,idx)=>{
+    const label = `${idx+1}. ${s.name||'📍'}`;
+    const marker = L.marker([s.lat,s.lng]).addTo(layerGroup);
+    marker.bindPopup(`<b>${escapeHtml(label)}</b>${s.geoLabel?`<div style="font-size:11px;opacity:0.85;margin-top:4px">${escapeHtml(s.geoLabel)}</div>`:''}`);
+    bounds.push([s.lat,s.lng]);
+  });
+  const b=L.latLngBounds(bounds);
+  map.fitBounds(b.pad(0.18));
+
+  // draw simple line connecting points (route polyline will be updated when OSRM returns)
+  const line = L.polyline(bounds, { color: '#3b5e91', weight: 4, opacity: 0.65, dashArray: '4 8' });
+  line.addTo(layerGroup);
+}
+
+async function refreshDayRoute(day){
+  const spots=state.spots[day]||[];
+  if(!spots.length) return;
+  await ensureDayGeocoded(day);
+  drawDayPinsAndRoute(day);
+  await fillTravelTimes(day);
+}
+
+async function fillTravelTimes(day){
+  const dayAll=state.spots[day]||[];
+  const hasCoords = (s)=>typeof s.lat==='number' && typeof s.lng==='number';
+
+  for(let i=0;i<dayAll.length-1;i++){
+    const el=document.getElementById(`travel-${day}-${i}`);
+    if(!el) continue;
+    const a=dayAll[i];
+    const b=dayAll[i+1];
+    if(!hasCoords(a) || !hasCoords(b)){
+      el.innerHTML = `<div class="travel-note">🚗 ${t('travelUnknown')}</div>`;
+      continue;
+    }
+    el.innerHTML = `<div class="travel-note">🚗 ${t('travelComputing')}</div>`;
+    const duration = await getOsrmDurationMinutes(a, b).catch(()=>null);
+    el.innerHTML = duration
+      ? `<div class="travel-note">🚗 ${t('travelMinutes', duration)}</div>`
+      : `<div class="travel-note">🚗 ${t('travelUnknown')}</div>`;
+    await sleep(200);
+  }
+}
+
+async function getOsrmDurationMinutes(a,b){
+  // OSRM public demo server (free). If it times out, we just show unknown.
+  const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`;
+  const resp = await fetch(url, { headers:{ 'Accept':'application/json' } });
+  if(!resp.ok) throw new Error('osrm failed');
+  const data = await resp.json();
+  const sec = data && data.routes && data.routes[0] && data.routes[0].duration;
+  if(!sec) return null;
+  return Math.max(1, Math.round(sec/60));
+}
+
+function escapeAttr(value){
+  return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function previewMapSearch(day){
+  const input=document.getElementById(`map-search-${day}`);
+  const query=input&&input.value.trim();
+  if(!query){ alert(t('alerts').query); return; }
+  const encoded=encodeURIComponent(query);
+  const el=document.getElementById(`map-day-${day}`);
+  if(!el) return;
+  let frame=document.getElementById(`map-frame-${day}`);
+  if(!frame){
+    const empty=el.querySelector('.map-empty');
+    if(empty) empty.outerHTML=`<iframe class="map-frame" id="map-frame-${day}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encoded}&output=embed"></iframe>`;
+    frame=document.getElementById(`map-frame-${day}`);
+  }
+  if(frame) frame.src=`https://maps.google.com/maps?q=${encoded}&output=embed`;
+}
+
+function setMapRecommendation(day,category){
+  const baseInput=document.getElementById(`map-base-${day}`);
+  const base=baseInput&&baseInput.value.trim();
+  if(!base){ alert(t('alerts').base); return; }
+  const query=`${category} near ${base}`;
+  const search=document.getElementById(`map-search-${day}`);
+  if(search) search.value=query;
+  previewMapSearch(day);
+}
+
+function getSuggestedStartTime(day){
+  const spots=state.spots[day]||[];
+  const timed=spots.filter(s=>s.endTime||s.startTime).sort((a,b)=>getSpotSortValue(a)-getSpotSortValue(b));
+  const last=timed[timed.length-1];
+  return (last&&(last.endTime||last.startTime))||'09:00';
+}
+
+function addMinutesToTime(time,mins){
+  const [h,m]=time.split(':').map(n=>parseInt(n,10));
+  const total=Math.min(23*60+59,Math.max(0,(h||0)*60+(m||0)+mins));
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+function getSuggestedEndTime(day){
+  return addMinutesToTime(getSuggestedStartTime(day),60);
+}
+
+function addMapSearchSpot(day){
+  const input=document.getElementById(`map-search-${day}`);
+  const query=input&&input.value.trim();
+  const startTime=document.getElementById(`map-start-${day}`).value;
+  const endTime=document.getElementById(`map-end-${day}`).value;
+  if(!query){ alert(t('alerts').query); return; }
+  if(!startTime||!endTime){ alert(t('alerts').time); return; }
+  if(endTime<startTime){ alert(t('alerts').order); return; }
+  if(!state.spots[day]) state.spots[day]=[];
+  state.spots[day].push({
+    id:Date.now(),
+    name:query,
+    startTime,
+    endTime,
+    time:`${startTime} - ${endTime}`,
+    desc:query.includes(' near ')?t('fromReco'):t('fromMap'),
+    addr:query,
+    emoji:'📍',
+    done:false,
+    starred:false,
+    note:'',
+    lat:null,
+    lng:null
+  });
+  sortSpotsForDay(day);
+  saveState();
+  renderDayGrid();
+  openDayDetail(day);
+}
+
+function focusDayMap(day,i){
+  // legacy no-op (kept for backward compatibility)
+  renderDayMap(day);
+}
+
+function openAddSpot(day){
+  document.getElementById('spot-modal-title').textContent=t('addSpotTitle');
+  document.getElementById('spot-save-btn').textContent=t('addToItinerary');
+  document.getElementById('new-spot-day').value=day;
+  document.getElementById('edit-spot-index').value='-1';
+  document.getElementById('new-spot-name').value='';
+  document.getElementById('new-spot-start').value='09:00';
+  document.getElementById('new-spot-end').value='10:00';
+  document.getElementById('new-spot-desc').value='';
+  document.getElementById('new-spot-addr').value='';
+  document.getElementById('new-spot-emoji').value='📍';
+  // emoji picker
+  document.querySelectorAll('#emoji-picker span').forEach(span=>{
+    span.style.cursor='pointer';
+    span.style.fontSize='22px';
+    span.onclick=()=>{ document.getElementById('new-spot-emoji').value=span.textContent; };
+  });
+  openModal('modal-add-spot');
+}
+
+function openEditSpot(day,i){
+  const s=state.spots[day][i];
+  if(!s) return;
+  document.getElementById('spot-modal-title').textContent=t('editSpotTitle');
+  document.getElementById('spot-save-btn').textContent=t('saveChanges');
+  document.getElementById('new-spot-day').value=day;
+  document.getElementById('edit-spot-index').value=i;
+  document.getElementById('new-spot-name').value=s.name||'';
+  document.getElementById('new-spot-start').value=s.startTime||'09:00';
+  document.getElementById('new-spot-end').value=s.endTime||'10:00';
+  document.getElementById('new-spot-desc').value=s.desc||'';
+  document.getElementById('new-spot-addr').value=s.addr||'';
+  document.getElementById('new-spot-emoji').value=s.emoji||'📍';
+  document.querySelectorAll('#emoji-picker span').forEach(span=>{
+    span.style.cursor='pointer';
+    span.style.fontSize='22px';
+    span.onclick=()=>{ document.getElementById('new-spot-emoji').value=span.textContent; };
+  });
+  closeModal('modal-spot-detail');
+  openModal('modal-add-spot');
+}
+
+function saveSpot(){
+  const day=parseInt(document.getElementById('new-spot-day').value);
+  const editIndex=parseInt(document.getElementById('edit-spot-index').value);
+  const name=document.getElementById('new-spot-name').value.trim();
+  const startTime=document.getElementById('new-spot-start').value;
+  const endTime=document.getElementById('new-spot-end').value;
+  if(!name){ alert(t('spotNameRequired')); return; }
+  if(startTime&&endTime&&endTime<startTime){ alert(t('alerts').order); return; }
+  if(!state.spots[day]) state.spots[day]=[];
+  const existing=editIndex>=0?state.spots[day][editIndex]:{};
+  const updated={
+    ...(existing||{}),
+    id:(existing&&existing.id)||Date.now(), name,
+    startTime, endTime,
+    time:startTime&&endTime?`${startTime} - ${endTime}`:startTime,
+    desc:document.getElementById('new-spot-desc').value,
+    addr:document.getElementById('new-spot-addr').value,
+    emoji:document.getElementById('new-spot-emoji').value||'📍',
+    done:(existing&&existing.done)||false,
+    starred:(existing&&existing.starred)||false,
+    note:(existing&&existing.note)||'',
+    lat:(existing&&existing.lat)||null,
+    lng:(existing&&existing.lng)||null,
+    geoLabel:(existing&&existing.geoLabel)||''
+  };
+  if(editIndex>=0) state.spots[day][editIndex]=updated;
+  else state.spots[day].push(updated);
+  sortSpotsForDay(day);
+  saveState();
+  closeModal('modal-add-spot');
+  openDayDetail(day);
+  renderDayGrid();
+}
+
+function deleteSpot(day,i){
+  if(!confirm(t('deleteSpotConfirm'))) return;
+  state.spots[day].splice(i,1);
+  saveState();
+  openDayDetail(day);
+  renderDayGrid();
+}
+
+function toggleDone(day,i){
+  state.spots[day][i].done=!state.spots[day][i].done;
+  saveState();
+  renderSpots(day);
+  renderDayMap(day);
+}
+
+function toggleStar(day,i){
+  state.spots[day][i].starred=!state.spots[day][i].starred;
+  saveState();
+  renderSpots(day);
+  renderNotes();
+}
+
+function openMapByIndex(day,i){
+  const addr=state.spots[day][i].addr;
+  openMap(encodeURIComponent(addr));
+}
+
+function openMap(query){
+  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`,'_blank');
+}
+
+function openSpotDetail(day,i){
+  const s=state.spots[day][i];
+  document.getElementById('spot-detail-content').innerHTML=`
+    <h3>${s.emoji} ${s.name}</h3>
+    ${formatSpotTime(s)?`<div style="color:var(--accent);font-size:13px;margin-top:6px">🕐 ${formatSpotTime(s)}</div>`:''}
+    ${s.desc?`<div style="color:var(--text2);font-size:13px;margin:10px 0;line-height:1.6">${s.desc}</div>`:''}
+    ${s.addr?`<button class="btn-secondary" style="margin-top:8px" onclick="openMapByIndex(${day},${i})">${t('openGoogle')}</button>`:''}
+    <button class="btn-secondary" style="margin-top:8px" onclick="openEditSpot(${day},${i})">${t('editSpotTitle')}</button>
+    <hr class="divider">
+    <div class="input-group">
+      <label>${t('noteBodyLabel')}</label>
+      <textarea id="spot-note-${day}-${i}" style="height:100px">${s.note||''}</textarea>
+    </div>
+    <button class="btn-primary" onclick="saveSpotNote(${day},${i})">${t('saveNote')}</button>
+    <div style="height:10px"></div>
+  `;
+  openModal('modal-spot-detail');
+}
+
+function saveSpotNote(day,i){
+  state.spots[day][i].note=document.getElementById(`spot-note-${day}-${i}`).value;
+  saveState();
+  alert(t('saved'));
+}
+
+// ============================================================
+// EXPENSE
+// ============================================================
+let selectedSplitPersons=[];
+
+function switchExpTab(tab,el){
+  document.querySelectorAll('#page-expense .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['record','settle','summary'].forEach(t=>{
+    document.getElementById('exp-'+t).style.display=t===tab?'block':'none';
+  });
+  if(tab==='settle') calcSettle();
+  if(tab==='summary') renderSummary();
+}
+
+function renderExpense(){
+  renderPersonList();
+  renderExpenseList();
+}
+
+function renderPersonList(){
+  const el=document.getElementById('person-list');
+  el.innerHTML=state.persons.map((p,i)=>`
+    <span class="person-chip" onclick="removePerson(${i})">👤 ${p} ✕</span>
+  `).join('');
+  if(!state.persons.length) el.innerHTML=`<span style="font-size:12px;color:var(--text3)">${t('noMembers')}</span>`;
+  // Update payer select
+  const payer=document.getElementById('exp-payer');
+  if(payer){
+    payer.innerHTML=state.persons.map(p=>`<option value="${p}">${p}</option>`).join('');
+  }
+  // Update split checkboxes
+  renderSplitPersons();
+}
+
+function renderSplitPersons(){
+  const el=document.getElementById('exp-split-persons');
+  if(!el) return;
+  selectedSplitPersons=[...state.persons];
+  el.innerHTML=state.persons.map(p=>`
+    <span class="person-chip selected" onclick="toggleSplitPerson(this,'${p}')">${p}</span>
+  `).join('');
+}
+
+function toggleSplitPerson(el,name){
+  el.classList.toggle('selected');
+  if(el.classList.contains('selected')) selectedSplitPersons.push(name);
+  else selectedSplitPersons=selectedSplitPersons.filter(p=>p!==name);
+}
+
+function addPerson(){
+  const name=document.getElementById('new-person-name').value.trim();
+  if(!name||state.persons.includes(name)){ alert(t('invalidName')); return; }
+  state.persons.push(name);
+  saveState();
+  renderPersonList();
+  closeModal('modal-add-person');
+  document.getElementById('new-person-name').value='';
+}
+
+function removePerson(i){
+  if(!confirm(`確定移除 ${state.persons[i]}？`)) return;
+  state.persons.splice(i,1);
+  saveState();
+  renderPersonList();
+}
+
+function addExpense(){
+  const name=document.getElementById('exp-name').value.trim();
+  const amount=parseFloat(document.getElementById('exp-amount').value);
+  const payer=document.getElementById('exp-payer').value;
+  const category=document.getElementById('exp-category').value;
+  if(!name||!amount||!payer){ alert(t('completeExpense')); return; }
+  const split=selectedSplitPersons.length?[...selectedSplitPersons]:[...state.persons];
+  state.expenses.push({id:Date.now(),name,amount,payer,split,category});
+  saveState();
+  renderExpenseList();
+  closeModal('modal-add-expense');
+  document.getElementById('exp-name').value='';
+  document.getElementById('exp-amount').value='';
+}
+
+function renderExpenseList(){
+  const el=document.getElementById('expense-list');
+  if(!el) return;
+  if(!state.expenses.length){
+    el.innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">${t('noExpenses')}</div>`;
+    return;
+  }
+  el.innerHTML=state.expenses.map((e,i)=>`
+    <div class="expense-item">
+      <div class="expense-row">
+        <span class="expense-name">${e.category} ${e.name}</span>
+        <span class="expense-amt">HK$${e.amount.toFixed(2)}</span>
+      </div>
+      <div class="expense-meta">${state.lang==='en'?'Paid by':'由'} <b style="color:var(--text)">${e.payer}</b> ${state.lang==='en'?' · Split: ':' 付款 · 分攤：'}${e.split.join(state.lang==='en'?', ':'、')}</div>
+      <button class="btn-danger" style="margin-top:8px;font-size:11px;padding:5px 10px" onclick="deleteExpense(${i})">${t('deleteBtn')}</button>
+    </div>
+  `).join('');
+}
+
+function deleteExpense(i){
+  state.expenses.splice(i,1);
+  saveState();
+  renderExpenseList();
+}
+
+function calcSettle(){
+  const el=document.getElementById('settle-list');
+  if(!el) return;
+  if(!state.persons.length){ el.innerHTML=`<div style="color:var(--text3);font-size:13px">${t('addMembersFirst')}</div>`; return; }
+
+  // Balance calc
+  const balance={};
+  state.persons.forEach(p=>balance[p]=0);
+
+  state.expenses.forEach(e=>{
+    if(balance[e.payer]===undefined) balance[e.payer]=0;
+    balance[e.payer]+=e.amount;
+    const share=e.amount/e.split.length;
+    e.split.forEach(p=>{
+      if(balance[p]===undefined) balance[p]=0;
+      balance[p]-=share;
+    });
+  });
+
+  // Settle
+  const settlements=[];
+  const pos=[],neg=[];
+  Object.entries(balance).forEach(([p,b])=>{
+    if(b>0.01) pos.push({p,b});
+    else if(b<-0.01) neg.push({p,b:-b});
+  });
+
+  let i=0,j=0;
+  while(i<pos.length&&j<neg.length){
+    const pay=Math.min(pos[i].b,neg[j].b);
+    settlements.push({from:neg[j].p,to:pos[i].p,amount:pay});
+    pos[i].b-=pay; neg[j].b-=pay;
+    if(pos[i].b<0.01) i++;
+    if(neg[j].b<0.01) j++;
+  }
+
+  if(!settlements.length){
+    el.innerHTML=`<div style="color:var(--accent2);font-size:14px;text-align:center;padding:20px">${t('balanced')}</div>`;
+    return;
+  }
+  el.innerHTML=settlements.map(s=>`
+    <div class="settle-card">
+      <div class="settle-row">
+        <b style="color:var(--danger)">${s.from}</b>
+        <span class="settle-arrow">→</span>
+        <b style="color:var(--accent2)">${s.to}</b>
+      </div>
+      <div style="margin-top:6px">
+        <span class="settle-amt">HK$${s.amount.toFixed(2)}</span>
+        <span style="font-size:12px;color:var(--text2)">${state.lang==='en'?` to ${s.to}`:` 要還俾 ${s.to}`}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSummary(){
+  const el=document.getElementById('summary-list');
+  if(!el) return;
+  const total=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const byPerson={};
+  state.persons.forEach(p=>byPerson[p]=0);
+  state.expenses.forEach(e=>{
+    if(!byPerson[e.payer]) byPerson[e.payer]=0;
+    byPerson[e.payer]+=e.amount;
+  });
+  const byCat={};
+  state.expenses.forEach(e=>{
+    if(!byCat[e.category]) byCat[e.category]=0;
+    byCat[e.category]+=e.amount;
+  });
+
+  el.innerHTML=`
+    <div class="summary-row"><span style="color:var(--text2)">${t('totalSpend')}</span><b style="color:var(--accent)">HK$${total.toFixed(2)}</b></div>
+    ${Object.entries(byPerson).map(([p,a])=>`
+      <div class="summary-row"><span style="color:var(--text2)">${p} ${state.lang==='en'?'paid':'已付'}</span><span>HK$${a.toFixed(2)}</span></div>
+    `).join('')}
+    <hr class="divider" style="margin:4px 0">
+    ${Object.entries(byCat).map(([c,a])=>`
+      <div class="summary-row"><span style="color:var(--text3)">${c}</span><span style="font-size:13px">HK$${a.toFixed(2)}</span></div>
+    `).join('')}
+  `;
+}
+
+// ============================================================
+// TRANSLATE
+// ============================================================
+let currentTranslation='';
+
+function switchTransTab(tab,el){
+  document.querySelectorAll('#page-translate .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['camera','text','menu','phrase'].forEach(t=>{
+    document.getElementById('trans-'+t).style.display=t===tab?'block':'none';
+  });
+  if(tab==='phrase') loadPhrases();
+}
+
+function previewMenuPhoto(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file) return;
+  const img=document.getElementById('camera-preview');
+  img.src=URL.createObjectURL(file);
+  img.style.display='block';
+  tryRunOcr(file);
+}
+
+async function tryRunOcr(file){
+  const input=document.getElementById('camera-menu-input');
+  if(!window.Tesseract){
+    input.placeholder=t('photoAddedPlaceholder');
+    return;
+  }
+  input.value=state.lang==='en'?'Reading photo text...':'讀緊相片文字...';
+  try{
+    const result=await Tesseract.recognize(file,'eng+jpn+kor+chi_tra+chi_sim');
+    input.value=(result.data&&result.data.text||'').trim();
+  }catch(e){
+    input.value='';
+    input.placeholder=t('ocrFailPlaceholder');
+  }
+}
+
+async function doCameraMenuTranslate(){
+  const text=document.getElementById('camera-menu-input').value.trim();
+  const lang=document.getElementById('camera-target-lang').value;
+  if(!text){ alert(t('cameraTextRequired')); return; }
+  const box=document.getElementById('camera-result');
+  const out=document.getElementById('camera-output');
+  box.style.display='block';
+  out.innerHTML=`<span class="loading-dot">${t('analyzing')}</span>...`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:2000,
+        messages:[{role:'user',content:`You are a travel camera translator for Cantonese-speaking Hong Kong tourists.
+The user copied OCR text from a menu, sign, package, or travel notice.
+Explain it in ${lang}.
+For each meaningful item, include:
+1. original text
+2. Cantonese-friendly meaning
+3. what it is / key ingredients or travel meaning
+4. pronunciation in romanization
+5. a short phrase the user can say to staff, with pronunciation
+Mention allergy/spicy warnings if visible.
+
+OCR text:
+${text}`}]
+      })
+    });
+    const data=await resp.json();
+    const content=data.content&&data.content.map(c=>c.text||'').join('');
+    if(!content) throw new Error('No translation content');
+    out.innerHTML=content.replace(/\n/g,'<br>');
+  }catch(e){
+    out.innerHTML=buildOfflineMenuHint(text);
+  }
+}
+
+function buildOfflineMenuHint(text){
+  const hints=[
+    ['辛','辣 / spicy','kara / shin','可以同店員講：唔該唔辣。'],
+    ['唐揚げ','日式炸雞','karaage','可以講：karaage hitotsu kudasai（一份炸雞唔該）。'],
+    ['寿司','壽司','sushi','可以講：sushi wa nan desu ka（呢款壽司係咩？）。'],
+    ['担々麺','擔擔麵，通常少少辣','tan tan men','可以問：karai desu ka（辣唔辣？）。'],
+    ['ピーナッツ','花生','piinattsu','如果敏感要講：piinattsu arerugii ga arimasu。'],
+    ['卵','蛋','tamago','如果唔食蛋，要問有冇 egg。'],
+    ['豚','豬肉','buta','唔食豬可問：buta nashi ni dekimasu ka。'],
+    ['牛','牛肉','gyu / ushi','可以問係咪 beef。'],
+    ['鶏','雞肉','tori','可以問係咪 chicken。'],
+    ['魚','魚','sakana','可以問有冇魚骨。']
+  ];
+  const matched=hints.filter(([key])=>text.includes(key));
+  if(!matched.length){
+    return '即時 AI 翻譯暫時連唔到。你已經可以用相機/相片貼文字；接上翻譯 API 後會逐項解釋意思、食材/注意事項、羅馬拼音同同店員講嘅句子。';
+  }
+  return matched.map(([key,meaning,pronounce,phrase])=>`
+    <div style="margin-bottom:12px">
+      <div style="font-weight:800;color:var(--text)">${key}</div>
+      <div style="color:var(--text2)">意思：${meaning}</div>
+      <div style="color:var(--text2)">讀音：${pronounce}</div>
+      <div style="color:var(--accent2);margin-top:3px">${phrase}</div>
+    </div>
+  `).join('')+'<div style="font-size:12px;color:var(--text3);margin-top:10px">完整逐句翻譯需要連接翻譯 API；以上係離線常見菜單字提示。</div>';
+}
+
+async function doTranslate(){
+  const text=document.getElementById('trans-input').value.trim();
+  const lang=document.getElementById('trans-target-lang').value;
+  if(!text){ alert(state.lang==='en'?'Enter text to translate': '請輸入要翻譯的文字'); return; }
+
+  const box=document.getElementById('trans-result-box');
+  const out=document.getElementById('trans-output');
+  const phonetic=document.getElementById('trans-phonetic');
+  const meaning=document.getElementById('trans-meaning');
+  box.style.display='block';
+  out.innerHTML=`<span class="loading-dot">${t('translating')}</span>...`;
+  phonetic.textContent='';
+  meaning.textContent='';
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        messages:[{role:'user',content:`Translate the following text to ${lang}. 
+Return ONLY a JSON object with these fields:
+- "translation": the translated text in ${lang} script
+- "phonetic": romanization/pronunciation guide (if applicable, else empty string)
+- "meaning": brief explanation in Traditional Chinese (Cantonese) of what the translated text means, max 30 chars
+
+Text to translate: "${text}"
+
+Respond with ONLY the JSON, no markdown, no backticks.`}]
+      })
+    });
+    const data=await resp.json();
+    const raw=data.content[0].text.trim();
+    const parsed=JSON.parse(raw);
+    currentTranslation=parsed.translation||'';
+    out.textContent=currentTranslation;
+    phonetic.textContent=parsed.phonetic?`📖 ${parsed.phonetic}`:'';
+    meaning.textContent=parsed.meaning||'';
+  }catch(e){
+    out.textContent=t('translateFail');
+  }
+}
+
+async function doMenuTranslate(){
+  const text=document.getElementById('menu-input').value.trim();
+  const lang=document.getElementById('menu-target-lang').value;
+  if(!text){ alert(t('menuRequired')); return; }
+  const box=document.getElementById('menu-result');
+  const out=document.getElementById('menu-output');
+  box.style.display='block';
+  out.innerHTML=`<span class="loading-dot">${t('menuAnalyzing')}</span>...`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:2000,
+        messages:[{role:'user',content:`You are a travel assistant helping Cantonese-speaking Hong Kong tourists understand a menu.
+Translate and explain the following menu items to ${lang}.
+For each item explain: what it is, main ingredients, taste profile (spicy/sweet/savory etc).
+Format clearly with the original text, translation, and a brief description.
+
+Menu:
+${text}`}]
+      })
+    });
+    const data=await resp.json();
+    out.innerHTML=data.content.map(c=>c.text||'').join('').replace(/\n/g,'<br>');
+  }catch(e){
+    out.textContent=t('menuFail');
+  }
+}
+
+function speakText(){
+  if(!currentTranslation){ alert(t('noTranslation')); return; }
+  const lang=document.getElementById('trans-target-lang').value;
+  const langMap={
+    Japanese:'ja-JP', Korean:'ko-KR', Thai:'th-TH', Vietnamese:'vi-VN',
+    'Traditional Chinese':'zh-TW', 'Simplified Chinese':'zh-CN', English:'en-US',
+    French:'fr-FR', Spanish:'es-ES', Italian:'it-IT', German:'de-DE',
+    Portuguese:'pt-PT', Arabic:'ar-SA', Hindi:'hi-IN'
+  };
+  const utter=new SpeechSynthesisUtterance(currentTranslation);
+  utter.lang=langMap[lang]||'en-US';
+  utter.rate=0.8;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+function saveTransLang(){
+  state.transLang=document.getElementById('trans-target-lang').value;
+  saveState();
+}
+
+function loadPhrases(){
+  const lang=document.getElementById('phrase-lang').value;
+  const data=PHRASES[lang]||[];
+  const el=document.getElementById('phrase-list');
+  if(!el) return;
+  el.innerHTML=data.map(cat=>`
+    <div class="section-title">${cat.cat}</div>
+    ${cat.items.map(item=>`
+      <div class="spot-item" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div>
+            <div style="font-size:12px;color:var(--text2)">${item.c}</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-top:3px">${item.t}</div>
+            ${item.p?`<div style="font-size:12px;color:var(--text3);font-style:italic;margin-top:2px">${item.p}</div>`:''}
+          </div>
+          <button class="speak-btn" style="padding:8px 12px;white-space:nowrap;font-size:12px;flex-shrink:0" onclick="speakPhrase('${item.t}','${lang}')">🔊</button>
+        </div>
+      </div>
+    `).join('')}
+  `).join('');
+}
+
+function speakPhrase(text,lang){
+  const langMap={Japanese:'ja-JP',Korean:'ko-KR',Thai:'th-TH',Vietnamese:'vi-VN',English:'en-US'};
+  const utter=new SpeechSynthesisUtterance(text);
+  utter.lang=langMap[lang]||'en-US';
+  utter.rate=0.75;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+// ============================================================
+// CURRENCY
+// ============================================================
+function getRate(from,to){
+  const customTo=state.customRates&&state.customRates[to];
+  const customFrom=state.customRates&&state.customRates[from];
+  let toHKD=1/(customFrom||FX_RATES[from]||1);
+  let fromHKD=customTo||FX_RATES[to]||1;
+  return toHKD*fromHKD;
+}
+
+function calcCurrency(){
+  const amount=parseFloat(document.getElementById('curr-amount').value)||0;
+  const from=document.getElementById('curr-from').value;
+  const currencies=Object.keys(FX_RATES).filter(c=>c!==from);
+  const el=document.getElementById('currency-results');
+  el.innerHTML=currencies.map(to=>{
+    const rate=getRate(from,to);
+    const result=amount*rate;
+    const fmt=result>=1000?result.toFixed(0):result.toFixed(2);
+    return `
+      <div class="expense-item" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:700">${CURRENCY_FLAG[to]||''} ${to}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">1 ${from} = ${(rate).toFixed(4)} ${to}${state.customRates&&state.customRates[to]?' ✏️':''}</div>
+        </div>
+        <div style="font-size:20px;font-weight:900;color:var(--accent)">${fmt}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setCustomRate(){
+  const curr=document.getElementById('custom-curr').value;
+  const rate=parseFloat(document.getElementById('custom-rate').value);
+  if(!rate){ alert(t('invalidRate')); return; }
+  if(!state.customRates) state.customRates={};
+  // Store as: how many [curr] per 1 HKD
+  state.customRates[curr]=rate;
+  saveState();
+  renderCustomRates();
+  calcCurrency();
+}
+
+function renderCustomRates(){
+  const el=document.getElementById('custom-rate-list');
+  if(!state.customRates||!Object.keys(state.customRates).length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:6px">${t('ratesSet')}</div>`+
+    Object.entries(state.customRates).map(([c,r])=>`
+      <span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface3);border-radius:20px;padding:4px 10px;font-size:12px;margin:3px;color:var(--accent)">
+        1 HKD = ${r} ${c}
+        <button onclick="deleteCustomRate('${c}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;padding:0;margin-left:2px">✕</button>
+      </span>
+    `).join('');
+}
+
+function deleteCustomRate(c){
+  delete state.customRates[c];
+  saveState();
+  renderCustomRates();
+  calcCurrency();
+}
+
+// ============================================================
+// NOTES
+// ============================================================
+function switchNoteTab(tab,el){
+  document.querySelectorAll('#page-notes .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['notes','checklist','bookmark'].forEach(t=>{
+    document.getElementById('note-'+t).style.display=t===tab?'block':'none';
+  });
+}
+
+function renderNotes(){
+  renderNotesList();
+  renderChecklist();
+  renderBookmarks();
+  renderCustomRates();
+}
+
+function addNote(){
+  const title=document.getElementById('note-title-input').value.trim();
+  const body=document.getElementById('note-body-input').value.trim();
+  if(!title){ alert(t('titleRequired')); return; }
+  state.notes.push({id:Date.now(),title,body,date:new Date().toLocaleDateString('zh-HK')});
+  saveState();
+  renderNotesList();
+  closeModal('modal-add-note');
+  document.getElementById('note-title-input').value='';
+  document.getElementById('note-body-input').value='';
+}
+
+function renderNotesList(){
+  const el=document.getElementById('notes-list');
+  if(!el) return;
+  if(!state.notes.length){ el.innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">${t('noNotes')}</div>`; return; }
+  el.innerHTML=state.notes.map((n,i)=>`
+    <div class="note-item" onclick="viewNote(${i})">
+      <div style="display:flex;justify-content:space-between">
+        <div class="note-title">📌 ${n.title}</div>
+        <button onclick="event.stopPropagation();deleteNote(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">✕</button>
+      </div>
+      <div class="note-body">${n.body||''}</div>
+      <div class="note-meta">${n.date}</div>
+    </div>
+  `).join('');
+}
+
+function viewNote(i){
+  const n=state.notes[i];
+  document.getElementById('spot-detail-content').innerHTML=`
+    <h3>📌 ${n.title}</h3>
+    <div style="margin-top:10px;color:var(--text2);font-size:14px;line-height:1.7;white-space:pre-wrap">${n.body||'（沒有內容）'}</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text3)">${n.date}</div>
+    <div style="height:12px"></div>
+  `;
+  openModal('modal-spot-detail');
+}
+
+function deleteNote(i){
+  state.notes.splice(i,1);
+  saveState();
+  renderNotesList();
+}
+
+function addCheckItem(){
+  const text=document.getElementById('check-input').value.trim();
+  if(!text) return;
+  state.checklist.push({id:Date.now(),text,done:false});
+  saveState();
+  renderChecklist();
+  document.getElementById('check-input').value='';
+}
+
+function renderChecklist(){
+  const el=document.getElementById('check-list');
+  if(!el) return;
+  el.innerHTML=state.checklist.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface);border-radius:var(--radius-sm);margin-bottom:8px;border:1px solid var(--border)">
+      <button onclick="toggleCheck(${i})" style="font-size:20px;background:none;border:none;cursor:pointer;flex-shrink:0">${c.done?'✅':'⬜'}</button>
+      <span style="flex:1;font-size:14px;${c.done?'text-decoration:line-through;color:var(--text3)':''}">${c.text}</span>
+      <button onclick="deleteCheck(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">✕</button>
+    </div>
+  `).join('');
+}
+
+function toggleCheck(i){
+  state.checklist[i].done=!state.checklist[i].done;
+  saveState();
+  renderChecklist();
+}
+
+function deleteCheck(i){
+  state.checklist.splice(i,1);
+  saveState();
+  renderChecklist();
+}
+
+function renderBookmarks(){
+  const el=document.getElementById('bookmark-list');
+  if(!el) return;
+  const bookmarks=[];
+  Object.entries(state.spots).forEach(([day,spots])=>{
+    spots.forEach((s,i)=>{
+      if(s.starred) bookmarks.push({day:parseInt(day),i,s});
+    });
+  });
+  if(!bookmarks.length){ el.innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">${t('noBookmarks')}</div>`; return; }
+  el.innerHTML=bookmarks.map(({day,i,s})=>`
+    <div class="note-item" style="border-left-color:var(--accent)">
+      <div style="display:flex;justify-content:space-between">
+        <div class="note-title">${s.emoji||'📍'} ${s.name}</div>
+        <span class="badge badge-yellow">${t('dayLabel',day)}</span>
+      </div>
+      ${s.time?`<div style="font-size:12px;color:var(--accent);margin-top:4px">🕐 ${s.time}</div>`:''}
+      ${s.addr?`<button class="spot-tag tag-map" style="margin-top:6px" onclick="openMap('${encodeURIComponent(s.addr)}')">${t('googleMap')}</button>`:''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+applyHeaderImages();
+bindOwnerGestures();
+updateSettingsEntryUi();
+applyLanguage();
+calcCurrency();
+renderCustomRates();
+loadPhrases();
+renderExpense();
+document.getElementById('settings-btn')?.addEventListener('click',openSettings);
+
+// auto-connect cloud if already configured
+setTimeout(()=>{ if(state.sync&&state.sync.enabled) connectCloudSync(); }, 0);
+
+// document.getElementById('set-trip-name').value=state.tripName;
+</script>
+</body>
+</html>
